@@ -1,0 +1,5 @@
+function: bubbleSort --- subl $8, %ebp
+array --- movl 8(%ebp), %eax
+size --- movl 12(%ebp), %eax
+i --- movl -4(%ebp), %eax
+temp --- movl -8(%ebp), %eax

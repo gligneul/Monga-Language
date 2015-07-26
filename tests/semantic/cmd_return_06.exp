@@ -1,0 +1,4 @@
+
+(func float foo<7>
+  (block
+    (return (int->float 1:int):float)))

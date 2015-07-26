@@ -1,0 +1,17 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+#include <mongaio.mngh>
+
+int main() {
+    printBool(true);
+    printBool(false);
+    printInt(123);
+    printFloat(357.0);
+    printString("Hello World");
+    printString("Test!");
+    return 0;
+}

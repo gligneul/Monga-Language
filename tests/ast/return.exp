@@ -1,0 +1,12 @@
+
+(func int foo<9>
+  (block
+    (return 10)))
+
+(func void bar<13>
+  (var int a<13>)
+  (block
+    (if a
+        (return))
+    (assign a 20)
+    (return)))

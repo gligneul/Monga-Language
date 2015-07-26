@@ -1,0 +1,26 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+#include <mongaio.mngh>
+
+void testIntegers() {
+    printInt(2 + 2);
+    printInt(5 - 3);
+    printInt(-(10 * 5) / 2);
+}
+
+void testFloats() {
+    printFloat(3 + 5.1 * 2);
+    printFloat(9 / 4.0 * 3.3);
+    printFloat(18 / 6. / 2015);
+}
+
+int main() {
+    testIntegers();
+    testFloats();
+    return 0;
+}
+

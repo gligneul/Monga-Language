@@ -1,0 +1,28 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * var.in
+ */
+
+float[][] get_matrix();
+
+int main() {
+    char c;
+    int i;
+    float f;
+    char[] s;
+
+    c = 258;
+    i = c;
+    f = i;
+    f = 10.2;
+    f = get_matrix()[1][1];
+    s = "hello world";
+    c = s[1];
+    i = "string"[3];
+    i = 0xABC;
+    
+    return 0;
+}

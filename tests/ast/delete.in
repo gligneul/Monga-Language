@@ -1,0 +1,17 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * call.in
+ */
+
+int main() {
+    char[] s;
+    s = new char[10];
+    delete s;
+    s = null;
+    delete new float[2];
+    return 0;
+}
+

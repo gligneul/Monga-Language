@@ -1,0 +1,26 @@
+
+(var int x<9>)
+
+(var bool[] flags<11>)
+
+(var bool is_true<13>)
+
+(proto void foo<15>)
+
+(var float a<17>)
+
+(var float b<17>)
+
+(var float c<17>)
+
+(func int[] bar<19>
+  (var int a<19>)
+  (block
+    (return 0)))
+
+(var char[][][][][][] six_dimensions<23>)
+
+(proto float abc<25>
+  (var int a<25>)
+  (var float b<25>)
+  (var char c<25>))

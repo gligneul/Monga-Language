@@ -1,0 +1,23 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * block.in
+ */
+
+int main() {
+    int v1;
+    {
+        int v2;
+        {
+            int v3;
+            {
+            }
+            v3 = 0;
+        }
+        v2 = 0;
+    }
+    v1 = 0;
+    return 0;
+}

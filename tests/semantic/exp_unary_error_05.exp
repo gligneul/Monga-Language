@@ -1,0 +1,1 @@
+mc: error at line 10, mismatch type in 'not' unary operation, expected 'bool', read 'char[]'

@@ -1,0 +1,41 @@
+
+(func void empty<9>
+  (block))
+
+(func int id<12>
+  (var int a<12>)
+  (block
+    (return a)))
+
+(func int m_strlen<16>
+  (var char[] str<16>)
+  (block
+    (var int len<17>)
+    (assign len 0)
+    (while (!= str[len] 0)
+      (assign len (+ len 1)))
+    (return len)))
+
+(func char[] m_strcpycat<24>
+  (var char[] a<24>)
+  (var char[] b<24>)
+  (block
+    (var int i<25>)
+    (var int j<25>)
+    (var char[] out<26>)
+    (assign out (new char[(+ (m_strlen a) (m_strlen b))]))
+    (assign i 0)
+    (assign j 0)
+    (while (!= a[i] 0)
+      (block
+        (assign out[j] a[i])
+        (assign i (+ i 1))
+        (assign j (+ j 1))))
+    (assign i 0)
+    (while (!= b[i] 0)
+      (block
+        (assign out[j] b[i])
+        (assign i (+ i 1))
+        (assign j (+ j 1))))
+    (assign out[j] 0)
+    (return out)))

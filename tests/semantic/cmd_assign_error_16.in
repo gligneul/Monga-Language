@@ -1,0 +1,12 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+int main() {
+    float f;
+    f = null;
+    return 0;
+}
+

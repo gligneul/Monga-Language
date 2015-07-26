@@ -1,0 +1,7 @@
+
+(func int main<7>
+  (block
+    (var bool a<8>)
+    (assign a<8> (and true:bool false:bool):bool)
+    (assign a<8> (or true:bool false:bool):bool)
+    (return 0:int)))

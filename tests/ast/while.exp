@@ -1,0 +1,10 @@
+
+(func int main<9>
+  (block
+    (while (> x 0)
+      (while (> y 0)
+        (assign x (+ y 1))))
+    (while z
+      (block
+        (do_stuff)
+        (assign z (- z 1))))))

@@ -1,0 +1,12 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_cmd_7.in
+ *
+ * Erro, assign fora da função.
+ */
+
+int x = 0;
+

@@ -1,0 +1,19 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * exp_4.in
+ */
+
+int main() {
+    char[] s;
+    bool b;
+    s = null;
+    s = "test";
+    s = new char[10];
+    b = true;
+    b = true || false && s == null;
+    return 0;
+}
+

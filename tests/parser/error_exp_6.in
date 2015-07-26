@@ -1,0 +1,14 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_exp_6.in
+ *
+ * Erro, string sem delimitador no final.
+ */
+
+void foo() {
+    char[] s;
+    s = "Hello \";
+}

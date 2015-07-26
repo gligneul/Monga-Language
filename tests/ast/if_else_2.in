@@ -1,0 +1,19 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * if_else_2.in
+ */
+
+void do_stuff();
+void other_stuff();
+
+int main() {
+    int x, y;
+    if (x) {
+        if (y)
+            do_stuff();
+    } else other_stuff();
+}
+

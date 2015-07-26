@@ -1,0 +1,4 @@
+
+(func bool foo<7>
+  (block
+    (return true:bool)))

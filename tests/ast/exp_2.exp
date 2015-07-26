@@ -1,0 +1,18 @@
+
+(func int foo<9>
+  (block
+    (var int a<10>)
+    (var int b<10>)
+    (var int c<10>)
+    (var int d<10>)
+    (var int e<10>)
+    (var int f<10>)
+    (var int x<10>)
+    (assign x (and (!= (+ a b) c) (or d e)))
+    (assign x (or (or (or a (and (not b) c)) (and d e)) f))
+    (assign x (<= (>= (+ a b) c) d))
+    (assign x (> (< a b) c))
+    (assign x (> (>= (<= (< a b) c) d) e))
+    (assign x (< (<= (>= (> a e) c) d) e))
+    (assign x (== a (>= (+ b c) d)))
+    (return 0)))

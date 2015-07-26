@@ -1,0 +1,9 @@
+
+(func int main<7>
+  (block
+    (var int a<8>)
+    (assign a<8> (float->int (+ (int->float 1:int):float 1.000000:float):float):int)
+    (assign a<8> (float->int (- (int->float 1:int):float 1.000000:float):float):int)
+    (assign a<8> (float->int (* (int->float 1:int):float 1.000000:float):float):int)
+    (assign a<8> (float->int (/ (int->float 1:int):float 1.000000:float):float):int)
+    (return 0:int)))

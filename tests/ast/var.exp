@@ -1,0 +1,19 @@
+
+(proto float[][] get_matrix<9>)
+
+(func int main<11>
+  (block
+    (var char c<12>)
+    (var int i<13>)
+    (var float f<14>)
+    (var char[] s<15>)
+    (assign c 258)
+    (assign i c)
+    (assign f i)
+    (assign f 10.200000)
+    (assign f (get_matrix)[1][1])
+    (assign s "hello world")
+    (assign c s[1])
+    (assign i "string"[3])
+    (assign i 2748)
+    (return 0)))

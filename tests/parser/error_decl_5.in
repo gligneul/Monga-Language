@@ -1,0 +1,11 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_decl_5.in
+ *
+ * Erro, o tipo da declaração não existe.
+ */
+
+string x;

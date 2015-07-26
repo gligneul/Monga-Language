@@ -1,0 +1,28 @@
+TK_STRING (a string)
+TK_STRING ( another string 
+)
+TK_STRING (abc " def ")
+TK_STRING (	t)
+TK_STRING (\)
+"
+\
+"
+TK_ID (globalVariable)
+TK_ID (_char)
+TK_ID (float_)
+TK_ID (char_1)
+TK_ID (void0)
+TK_ID (e2)
+TK_KINT (10)
+TK_ID (abd)
+TK_KINT (35)
+TK_ID (p8)
+TK_KINT (0)
+TK_ID (x)
+"
+TK_ID (cr)
+"
+TK_ID (thisShouldbeAnId)
+TK_ID (e)
+-
+TK_KINT (321)

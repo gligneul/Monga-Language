@@ -1,0 +1,14 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_cmd_3.in
+ *
+ * Erro, atribuição sem lado esquerdo.
+ */
+
+void foo() {
+    int x;
+    = 2;
+}

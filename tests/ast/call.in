@@ -1,0 +1,23 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * call.in
+ */
+
+void foo();
+char first(char[] str);
+float pow(float a, float b);
+
+int main() {
+    char c;
+    float f;
+    foo();
+    first("monga");
+    pow(3, 5);
+    c = first("abc");
+    f = pow(5, 7.1);
+    return 0;
+}
+

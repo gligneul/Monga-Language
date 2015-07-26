@@ -1,0 +1,4 @@
+
+(func float foo<7>
+  (block
+    (return 1.000000:float)))

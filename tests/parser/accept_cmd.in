@@ -1,0 +1,53 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * accept_cmd.in
+ */
+
+float[][] create_matrix(int n, int m, float default) {
+    int j;
+    float[][] matrix;
+    matrix = new float[][n];
+    i = 0;
+    while (i < n) {
+        int j;
+        matrix[i] = new float[m];
+        j = 0;
+        while (j < n) {
+            j = j + 1;
+            matrix[i][j] = default;
+        }
+        i = i + 1;
+    }
+    return matrix;
+}
+
+void ifs(int x, int y) {
+    char[] message;
+    if (x > y)
+        if (y < x) {
+            message = "equals";
+        }
+        else
+            message = "diferent";
+
+    if (x + y == y + x)
+        message = "123";
+}
+
+void mem() {
+    char[] s;
+    s = new char[10];
+    s[2] = 0;
+    delete s;
+    delete (call());
+}
+
+int main() {
+    {
+        (create_matrix(3, 5, 7))[2][3] = 2;
+    }
+    return 0;
+}

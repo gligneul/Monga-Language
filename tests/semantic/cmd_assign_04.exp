@@ -1,0 +1,7 @@
+
+(func int main<7>
+  (block
+    (var float f<8>)
+    (assign f<8> (int->float 123:int):float)
+    (assign f<8> 32.099998:float)
+    (return 0:int)))

@@ -1,0 +1,19 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * while.in
+ */
+
+int main() {
+    while(x > 0)
+        while(y > 0)
+            x = y + 1;
+
+    while(z) {
+        do_stuff();
+        z = z - 1;
+    }
+}
+

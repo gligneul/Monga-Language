@@ -1,0 +1,17 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_block_1.in
+ *
+ * Erro, declaração após uma atribuição.
+ */
+
+int foo() {
+    int var;
+    var = 2;
+    int var2;
+    return 0;
+}
+

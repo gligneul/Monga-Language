@@ -1,0 +1,25 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+#include <mongaio.mngh>
+
+int fat(int n) {
+    if (n == 0) {
+        return 1;
+    } else {
+        return n * fat(n - 1);
+    }
+}
+
+int main() {
+    int i;
+    i = 0;
+    while (i < 10) {
+        printInt(fat(i));
+        i = i + 1;
+    }
+    return 0;
+}

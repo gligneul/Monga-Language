@@ -1,0 +1,4 @@
+
+(func void foo<7>
+  (block
+    (return)))

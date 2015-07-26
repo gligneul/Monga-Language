@@ -1,0 +1,16 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_cmd_6.in
+ *
+ * Erro, else sem if.
+ */
+
+int foo() {
+    int x;
+    else
+        return 1;
+    return 0;
+}

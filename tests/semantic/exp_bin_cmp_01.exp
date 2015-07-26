@@ -1,0 +1,13 @@
+
+(func int main<7>
+  (block
+    (var bool a<8>)
+    (assign a<8> (> 1:int 1:int):bool)
+    (assign a<8> (>= 2:int 2:int):bool)
+    (assign a<8> (< 3:int 3:int):bool)
+    (assign a<8> (<= 4:int 4:int):bool)
+    (assign a<8> (> (int->float 1:int):float 1.000000:float):bool)
+    (assign a<8> (>= (int->float 2:int):float 2.000000:float):bool)
+    (assign a<8> (< (int->float 3:int):float 3.000000:float):bool)
+    (assign a<8> (<= (int->float 4:int):float 4.100000:float):bool)
+    (return 0:int)))

@@ -1,0 +1,11 @@
+
+(proto void foo<7>)
+
+(func int main<9>
+  (block
+    (var int foo<10>)
+    (block
+      (var int foo<12>)
+      (assign foo<12> 3:int))
+    (assign foo<10> 2:int)
+    (return 0:int)))

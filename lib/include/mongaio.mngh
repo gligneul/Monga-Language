@@ -1,0 +1,14 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+void printInt(int value);
+void printFloat(float value);
+void printString(char[] string);
+void printChar(char value);
+void printBool(bool value);
+void printArray(int[] array, int n);
+void printMatrix(float[][] matrix, int n, int m);
+

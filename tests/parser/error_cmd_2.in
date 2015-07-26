@@ -1,0 +1,14 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_cmd_2.in
+ *
+ * Erro, expressão sozinha.
+ */
+
+void foo() {
+    int a, b;
+    a + b;
+}

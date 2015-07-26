@@ -1,0 +1,12 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_cmd_7.in
+ *
+ * Erro, cmd fora da função.
+ */
+
+if (x) 
+    do_stuff();

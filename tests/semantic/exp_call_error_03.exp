@@ -1,0 +1,1 @@
+mc: error at line 11, mismatch type in parameter of 'foo' function call, cannot assign 'bool' to 'int'

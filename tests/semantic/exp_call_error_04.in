@@ -1,0 +1,14 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+int foo(int a, float b);
+
+int main() {
+    int a;
+    a = foo(1);
+    return 0;
+}
+

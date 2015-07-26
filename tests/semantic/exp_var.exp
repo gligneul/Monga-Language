@@ -1,0 +1,14 @@
+
+(func int main<7>
+  (block
+    (var bool b<8>)
+    (var char c<9>)
+    (var int a<10>)
+    (var float f<11>)
+    (var char[] s<12>)
+    (assign b<8> b<8>:bool)
+    (assign c<9> c<9>:int)
+    (assign a<10> a<10>:int)
+    (assign f<11> f<11>:float)
+    (assign s<12> s<12>:char[])
+    (return 0:int)))

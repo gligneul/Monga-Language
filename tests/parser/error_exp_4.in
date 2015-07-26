@@ -1,0 +1,15 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_exp_4.in
+ *
+ * Erro, new com tipo void.
+ */
+
+int botton() {
+    int[] x;
+    x = new void[2];
+    return 1;
+}

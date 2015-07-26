@@ -1,0 +1,14 @@
+
+(proto void do_stuff<9>)
+
+(proto void other_stuff<10>)
+
+(func int main<12>
+  (block
+    (var int x<13>)
+    (var int y<13>)
+    (if x
+        (block
+          (if y
+              (do_stuff)))
+        (other_stuff))))

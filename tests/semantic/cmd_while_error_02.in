@@ -1,0 +1,11 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+int main() {
+    while (1.0) return 0;
+    return 0;
+}
+

@@ -1,0 +1,10 @@
+
+(func int main<7>
+  (block
+    (var bool[] b<8>)
+    (var char[] s<9>)
+    (var float[][][] f<10>)
+    (assign b<8> (new bool[20:int]):bool[])
+    (assign s<9> (new char[123:int]):char[])
+    (assign f<10> (new float[][][20:int]):float[][][])
+    (return 0:int)))

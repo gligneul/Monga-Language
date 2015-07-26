@@ -1,0 +1,16 @@
+
+(proto void do_stuff<9>)
+
+(proto void other_stuff<10>)
+
+(proto void even_more<11>)
+
+(func int main<13>
+  (block
+    (var int x<14>)
+    (var int y<14>)
+    (if x
+        (do_stuff)
+        (if y
+            (other_stuff)
+            (even_more)))))

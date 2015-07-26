@@ -1,0 +1,11 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_decl_4.in
+ *
+ * Erro, uma variável não pode ser do tipo void.
+ */
+
+void i;

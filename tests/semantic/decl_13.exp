@@ -1,0 +1,15 @@
+
+(func int main<7>
+  (block
+    (var int a<8>)
+    (block
+      (var int b<10>)
+      (block
+        (var int c<12>)
+        (block
+          (var int d<14>)
+          (assign d<14> 0:int))
+        (assign c<12> 0:int))
+      (assign b<10> 0:int))
+    (assign a<8> 0:int)
+    (return 0:int)))

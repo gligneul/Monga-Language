@@ -1,0 +1,20 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * exp_2.in
+ */
+
+int foo() {
+    int a, b, c, d, e, f, x;
+    x = a + b != c && (d || e);
+    x = a || !b && c || d && e || f;
+    x = a + b >= c <= d;
+    x = a < b > c;
+    x = a < b <= c >= d > e;
+    x = a > e >= c <= d < e;
+    x = a == b + c >= d;
+    return 0;
+}
+

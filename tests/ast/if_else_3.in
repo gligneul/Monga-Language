@@ -1,0 +1,22 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * if_else_3.in
+ */
+
+void do_stuff();
+void other_stuff();
+void even_more();
+
+int main() {
+    int x, y;
+    if (x)
+        do_stuff();
+    else if (y)
+        other_stuff();
+    else
+        even_more();
+}
+

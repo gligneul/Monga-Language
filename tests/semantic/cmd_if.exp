@@ -1,0 +1,7 @@
+
+(func int main<7>
+  (block
+    (if true:bool
+        (return 0:int)
+        (return 1:int))
+    (return 0:int)))

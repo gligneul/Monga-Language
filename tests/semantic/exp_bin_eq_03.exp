@@ -1,0 +1,9 @@
+
+(func int main<7>
+  (block
+    (var bool a<8>)
+    (assign a<8> (== 3.000000:float 1.200000:float):bool)
+    (assign a<8> (!= 3.000000:float 1.200000:float):bool)
+    (assign a<8> (== 2.000000:float (int->float 20:int):float):bool)
+    (assign a<8> (!= 2.000000:float (int->float 20:int):float):bool)
+    (return 0:int)))

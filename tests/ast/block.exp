@@ -1,0 +1,13 @@
+
+(func int main<9>
+  (block
+    (var int v1<10>)
+    (block
+      (var int v2<12>)
+      (block
+        (var int v3<14>)
+        (block)
+        (assign v3 0))
+      (assign v2 0))
+    (assign v1 0)
+    (return 0)))

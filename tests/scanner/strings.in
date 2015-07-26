@@ -1,0 +1,29 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * strings.in
+ */
+
+"a string"
+" another string \n"
+"abc \" def \""
+"\tt"
+"\\"
+"\"
+
+globalVariable
+_char
+float_
+char_1
+void0
+e2
+
+10abd
+35p8
+0x
+"cr
+" thisShouldbeAnId
+e-321
+

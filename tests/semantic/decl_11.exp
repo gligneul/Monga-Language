@@ -1,0 +1,26 @@
+
+(func int main<7>
+  (block
+    (var int a<8>)
+    (block
+      (block
+        (block
+          (block
+            (block
+              (block
+                (block
+                  (block
+                    (block
+                      (block
+                        (block
+                          (block
+                            (block
+                              (block
+                                (block
+                                  (block
+                                    (block
+                                      (block
+                                        (block
+                                          (block))))))))))))))))))))
+    (assign a<8> 10:int)
+    (return 0:int)))

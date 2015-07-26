@@ -1,0 +1,9 @@
+
+(proto int foo<7>
+  (var int a<7>))
+
+(func int main<9>
+  (block
+    (var int a<10>)
+    (assign a<10> (foo<7> 1:int):int)
+    (return 0:int)))

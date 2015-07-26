@@ -1,0 +1,4 @@
+
+(func char[] foo<7>
+  (block
+    (return null:null)))

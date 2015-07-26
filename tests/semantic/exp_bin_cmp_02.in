@@ -1,0 +1,19 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+int main() {
+    bool a;
+    a = 1.0 > 1;
+    a = 2.0 >= 2;
+    a = 3.0 < 3;
+    a = 4.0 <= 4;
+    a = 1.0 > 1.0;
+    a = 2.0 >= 2.0;
+    a = 3.0 < 3.0;
+    a = 4.0 <= 4.1;
+    return 0;
+}
+

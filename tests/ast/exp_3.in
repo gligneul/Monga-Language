@@ -1,0 +1,23 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * exp_3.in
+ */
+
+char[] foo(int x);
+float bar(int y, int z);
+int boo(char w);
+
+int main() {
+    int a, b, c, d, e;
+    char[] s;
+    s = foo(bar(a, boo(b)));
+    s = new char[bar(a, b)];
+    s[foo(bar(a, b))] = c;
+    a = foo(boo(b))[c] + d;
+    a = -foo(boo(b))[c + d] * e;
+    return 0;
+}
+

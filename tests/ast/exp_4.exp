@@ -1,0 +1,11 @@
+
+(func int main<9>
+  (block
+    (var char[] s<10>)
+    (var bool b<11>)
+    (assign s null)
+    (assign s "test")
+    (assign s (new char[10]))
+    (assign b true)
+    (assign b (or true (and false (== s null))))
+    (return 0)))

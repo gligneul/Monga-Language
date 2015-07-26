@@ -1,0 +1,7 @@
+
+(var int a<7>)
+
+(func int main<9>
+  (block
+    (assign a<7> 0:int)
+    (return a<7>:int)))

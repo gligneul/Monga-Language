@@ -1,0 +1,18 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * return.in
+ */
+
+int foo() {
+    return 10;
+}
+
+void bar(int a) {
+    if (a) return;
+    a = 20;
+    return;
+}
+

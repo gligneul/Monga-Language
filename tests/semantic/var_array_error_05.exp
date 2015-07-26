@@ -1,0 +1,1 @@
+mc: error at line 10, mismatch type in left expression of access, expected an array, read 'float'

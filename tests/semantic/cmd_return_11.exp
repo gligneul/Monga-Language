@@ -1,0 +1,6 @@
+
+(proto void bar<7>)
+
+(func void foo<9>
+  (block
+    (return (bar<7>):void)))

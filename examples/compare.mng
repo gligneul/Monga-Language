@@ -1,0 +1,118 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+#include <mongaio.mngh>
+
+#define TEST(expression) \
+    printString(#expression); \
+    if (expression) { \
+        printString("            passed"); \
+    } else { \
+        printString("            failed"); \
+    }
+
+void cmp_array() {
+    char[] array, array2, nullarray;
+
+    array = "ola";
+    array2 = "mundo";
+    nullarray = null;
+
+    printString(">>>>> array");
+    TEST(nullarray == null)
+    TEST(!(null != nullarray))
+    TEST(array != array2)
+    TEST(array != null)
+    TEST(!(array == null))
+    printString("------------------");
+}
+
+void cmp_bool() {
+    printString(">>>>> bool");
+    TEST(true && true)
+    TEST(!(true && false))
+    TEST(!(false && true))
+    TEST(!(false && false))
+    TEST(true || true)
+    TEST(true || false)
+    TEST(false || true)
+    TEST(!(false || false))
+    printString("------------------");
+}
+
+void cmp_int() {
+    printString(">>>>> int");
+    TEST(3 == 3)
+    TEST(!(3 == 5))
+    TEST(!(3 != 3))
+    TEST(3 != 5)
+    TEST(!(3 < 3))
+    TEST(3 < 5)
+    TEST(!(5 < 3))
+    TEST(3 <= 3)
+    TEST(3 <= 5)
+    TEST(!(5 <= 3))
+    TEST(!(3 > 3))
+    TEST(!(3 > 5))
+    TEST(5 > 3)
+    TEST(3 >= 3)
+    TEST(!(3 >= 5))
+    TEST(5 >= 3)
+    printString("------------------");
+}
+
+void cmp_neg_int() {
+    printString(">>>>> -int");
+    TEST(-1 == -1)
+    TEST(!(-1 == 1))
+    TEST(!(1 <= -1))
+    TEST(-1 < 1)
+    TEST(1 > -1)
+    TEST(!(-1 >= 1))
+    printString("------------------");
+}
+
+void cmp_float() {
+    printString(">>>>> float");
+    TEST(3.0 == 3.0)
+    TEST(!(3.0 == 5.0))
+    TEST(!(3.0 != 3.0))
+    TEST(3.0 != 5.0)
+    TEST(!(3.0 < 3.0))
+    TEST(3.0 < 5.0)
+    TEST(!(5.0 < 3.0))
+    TEST(3.0 <= 3.0)
+    TEST(3.0 <= 5.0)
+    TEST(!(5.0 <= 3.0))
+    TEST(!(3.0 > 3.0))
+    TEST(!(3.0 > 5.0))
+    TEST(5.0 > 3.0)
+    TEST(3.0 >= 3.0)
+    TEST(!(3.0 >= 5.0))
+    TEST(5.0 >= 3.0)
+    printString("------------------");
+}
+
+void cmp_neg_float() {
+    printString(">>>>> -float");
+    TEST(-1.0 == -1.0)
+    TEST(!(-1.0 == 1.0))
+    TEST(!(1.0 <= -1.0))
+    TEST(-1.0 < 1.0)
+    TEST(1.0 > -1.0)
+    TEST(!(-1.0 >= 1.0))
+    printString("------------------");
+}
+
+int main() {
+    cmp_array();
+    cmp_bool();
+    cmp_int();
+    cmp_neg_int();
+    cmp_float();
+    cmp_neg_float();
+    return 0;
+}

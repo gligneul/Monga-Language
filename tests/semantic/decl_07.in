@@ -1,0 +1,20 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+void foo();
+
+int bar;
+
+int main() {
+    int foo;
+    {
+        char bar;
+    }
+    foo = 2;
+    bar = 2;
+    return 0;
+}
+

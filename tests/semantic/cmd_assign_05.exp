@@ -1,0 +1,7 @@
+
+(func int main<7>
+  (block
+    (var char[] s<8>)
+    (assign s<8> "hello":char[])
+    (assign s<8> null:null)
+    (return 0:int)))

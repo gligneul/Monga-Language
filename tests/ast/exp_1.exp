@@ -1,0 +1,20 @@
+
+(func int main<9>
+  (block
+    (var float out<10>)
+    (var float x<10>)
+    (var float y<10>)
+    (var float z<10>)
+    (assign out (- (+ x y) z))
+    (assign out (+ (+ x y) z))
+    (assign out (+ x (* y x)))
+    (assign out (* (/ x y) x))
+    (assign out (+ (* (- x) y) z))
+    (assign out (+ x (* (- y) (- z))))
+    (assign out (- (- x (- y)) (- z)))
+    (assign out (or (* x y) z))
+    (assign out (or x (* y z)))
+    (assign out (or (and x y) (and x z)))
+    (assign out (or (not x) (not y)))
+    (assign out (- x (not (- y))))
+    (return 0)))

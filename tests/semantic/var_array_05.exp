@@ -1,0 +1,9 @@
+
+(func int main<7>
+  (block
+    (var int a<8>)
+    (var char[] s<9>)
+    (var char c<10>)
+    (assign s<9> "abc":char[])
+    (assign a<8> s<9>:char[][c<10>:int]:int)
+    (return 0:int)))

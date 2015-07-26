@@ -1,0 +1,28 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * accept_decl.in
+ */
+
+int x;
+
+bool b, c;
+
+bool[] flags;
+
+float a, b, c;
+
+char[] string;
+
+float[][] matrix;
+
+int[][][][][][] six_dimensions;
+
+void foo_a();
+
+int foo_b(int x);
+
+char[][] foo_c(int x, char b);
+

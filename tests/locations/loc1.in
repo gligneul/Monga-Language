@@ -1,0 +1,47 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+int global1;
+
+void empty() {}
+
+void paramonly(char param) {}
+
+void varonly() { char a, b; }
+
+void foo(               /* foo: 8 */
+    int p1,             /* +8 */
+    char p2,            /* +12 */
+    float[] p3)         /* +16 */
+{
+    char v1;            /* -4 */
+    char[] v2;          /* -5 */
+    char v3;            /* -9 (max 10) */
+}
+
+char global2;
+
+int main() {            /* main: 20 */
+    int a;              /* -4 */
+    bool b;             /* -8 */
+    float c;            /* -9 */
+    {
+        char d;         /* -13 */
+        char[] e;       /* -14 */
+        {
+            int f;      /* -18 */
+        }
+        {
+            float g;    /* -18 */
+            char h;     /* -22 (max 23) */
+        }
+    }
+    {
+        bool[] i;       /* -13 */
+        int j;          /* -17 */
+    }
+    return 0;
+}

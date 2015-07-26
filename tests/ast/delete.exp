@@ -1,0 +1,9 @@
+
+(func int main<9>
+  (block
+    (var char[] s<10>)
+    (assign s (new char[10]))
+    (delete s)
+    (assign s null)
+    (delete (new float[2]))
+    (return 0)))

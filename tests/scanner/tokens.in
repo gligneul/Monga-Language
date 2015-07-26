@@ -1,0 +1,26 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * tokens.in
+ */
+
+void
+char
+int
+float
+if else
+while
+return
+new
+delete
+null
+bool
+true
+false
+-+*=/
+== != <= >= <>
+{}()[];,
+||&&
+

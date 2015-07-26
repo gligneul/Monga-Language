@@ -1,0 +1,28 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+#include <mongaio.mngh>
+
+int foo() {
+    return 4;
+}
+
+float bar() {
+    return 6.0;
+}
+
+void pIfGt5(int i) {
+    if (i <= 5)
+        return;
+    printInt(i);
+}
+
+int main() {
+    pIfGt5(foo());
+    pIfGt5(bar());
+    return 0;
+}
+

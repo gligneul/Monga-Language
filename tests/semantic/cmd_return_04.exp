@@ -1,0 +1,4 @@
+
+(func int foo<7>
+  (block
+    (return 1:int)))

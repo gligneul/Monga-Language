@@ -1,0 +1,15 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * error_exp_5.in
+ *
+ * Erro, new sem a expressão interna.
+ */
+
+int botton() {
+    int[] x;
+    x = new int[];
+    return 1;
+}

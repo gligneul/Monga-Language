@@ -1,0 +1,21 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+#include <mongaio.mngh>
+
+float foo(float a, int b) {
+    printFloat(a);
+    printInt(b);
+    return a + b;
+}
+
+int main() {
+    float f;
+    f = foo(14.9, 5.1);
+    printFloat(f);
+    return 0;
+}
+

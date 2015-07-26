@@ -1,0 +1,14 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ */
+
+void foo();
+
+int main() {
+    bool b;
+    b = foo();
+    return 0;
+}
+

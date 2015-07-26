@@ -1,0 +1,5 @@
+
+(func int main<7>
+  (block
+    (delete (new int[99:int]):int[])
+    (return 0:int)))

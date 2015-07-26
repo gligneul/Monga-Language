@@ -1,0 +1,18 @@
+
+(func int main<7>
+  (block
+    (var bool b<8>)
+    (var char c<9>)
+    (var int a<10>)
+    (var float f<11>)
+    (var char[] s<12>)
+    (assign b<8> true:bool)
+    (assign b<8> false:bool)
+    (assign c<9> 10:int)
+    (assign a<10> 123:int)
+    (assign a<10> 255:int)
+    (assign f<11> 123.000000:float)
+    (assign f<11> 0.001000:float)
+    (assign s<12> "oi":char[])
+    (assign s<12> null:null)
+    (return 0:int)))

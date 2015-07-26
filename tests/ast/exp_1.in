@@ -1,0 +1,25 @@
+/*
+ * PUC-Rio
+ * INF1715 Compiladores
+ * Gabriel de Quadros Ligneul 1212560
+ *
+ * exp_1.in
+ */
+
+int main() {
+    float out, x, y, z;
+    out = x + y - z;
+    out = x + y + z;
+    out = x + y * x;
+    out = x / y * x;
+    out = -x * y + z;
+    out = x + -y * -z;
+    out = x -- y -- z;
+    out = x * y || z;
+    out = x || y * z;
+    out = x && y || x && z;
+    out = !x || !y;
+    out = x - ! - y;
+    return 0;
+}
+
