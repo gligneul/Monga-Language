@@ -1,14 +1,14 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
  *
  * call.in
  */
 
-void foo();
-char first(char[] str);
-float pow(float a, float b);
+void foo() {}
+char first(char[] str) { return str[0]; }
+float pow(float a, float b) { return a * b; }
 
 int main() {
     char c;

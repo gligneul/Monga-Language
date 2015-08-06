@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * error.c
  */
@@ -12,22 +11,22 @@
 
 #include "error.h"
 
-void error(const char* formatedMessage, ...)
+void Error(const char* formatedMessage, ...)
 {
     va_list args;
     va_start(args, formatedMessage);
-    fprintf(stderr, "mc: error, ");
+    fprintf(stderr, "monga: error, ");
     vfprintf(stderr, formatedMessage, args);
     fprintf(stderr, "\n");
     va_end(args);
     exit(1);
 }
 
-void errorl(int line, const char* formatedMessage, ...)
+void ErrorL(int line, const char* formatedMessage, ...)
 {
     va_list args;
     va_start(args, formatedMessage);
-    fprintf(stderr, "mc: error at line %d, ", line);
+    fprintf(stderr, "monga: error at line %d, ", line);
     vfprintf(stderr, formatedMessage, args);
     fprintf(stderr, "\n");
     va_end(args);

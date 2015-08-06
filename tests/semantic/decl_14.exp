@@ -1,6 +1,0 @@
-
-(proto void foo<7>
-  (var float value<7>))
-
-(proto void bar<8>
-  (var float value<8>))

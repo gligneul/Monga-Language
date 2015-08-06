@@ -1,0 +1,10 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+char[] foo() {
+    return 1.0;
+}
+

@@ -1,7 +1,7 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
  *
  * accept_cmd.in
  */
@@ -43,6 +43,12 @@ void mem() {
     s[2] = 0;
     delete s;
     delete (call());
+}
+
+void printing() {
+    print 10, 20.0 * 2;
+    print a + b();
+    print a(a, b);
 }
 
 int main() {

@@ -1,6 +1,0 @@
-
-(func int main<7>
-  (block
-    (while true:bool
-      (return 0:int))
-    (return 0:int)))

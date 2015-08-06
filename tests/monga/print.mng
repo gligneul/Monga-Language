@@ -1,0 +1,15 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int main() {
+    print true, "\n";
+    print false, "\n";
+    print 123, "\n";
+    print 357.0, "\n";
+    print "Hello World\n";
+    print "Test!\n";
+    return 0;
+}

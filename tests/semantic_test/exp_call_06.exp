@@ -1,0 +1,11 @@
+
+(func char foo<7>
+  (var float f<7>)
+  (block
+    (return (float->int f<7>:float):int)))
+
+(func int main<11>
+  (block
+    (var int a<12>)
+    (assign a<12> (foo<7> 1.100000:float):int)
+    (return 0:int)))

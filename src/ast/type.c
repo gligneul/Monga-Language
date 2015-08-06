@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * type.c
  */
@@ -13,20 +12,20 @@
 
 #include "util/new.h"
 
-type_t type_create(type_tag tag, int pointers)
+Type TypeCreate(TypeTag tag, int pointers)
 {
-    type_t type;
+    Type type;
     type.tag = tag;
     type.pointers = pointers;
     return type;
 }
 
-bool type_cmp(type_t a, type_t b)
+bool TypeEquals(Type a, Type b)
 {
     return a.tag == b.tag && a.pointers == b.pointers;
 }
 
-char* type_to_str(type_t type)
+char* TypeToString(Type type)
 {
     size_t size = 6 + 2 * type.pointers;
     char* buffer = NEW_ARRAY(char, size);
@@ -39,7 +38,6 @@ char* type_to_str(type_t type)
     case TYPE_CHAR:  sprintf(buffer, "char"); break;
     case TYPE_INT:   sprintf(buffer, "int"); break;
     case TYPE_FLOAT: sprintf(buffer, "float"); break;
-    case TYPE_NULL:  sprintf(buffer, "null"); break;
     case TYPE_UNDEFINED: sprintf(buffer, "undefined"); break;
     }
     len = strlen(buffer);
@@ -51,10 +49,59 @@ char* type_to_str(type_t type)
     return buffer;
 }
 
-void type_print(type_t type)
+void TypePrint(Type type)
 {
-    char* buffer = type_to_str(type);
+    char* buffer = TypeToString(type);
     printf("%s", buffer);
     free(buffer);
+}
+
+bool TypeIsVoid(Type type)
+{
+    return type.tag == TYPE_VOID;
+}
+
+bool TypeIsBool(Type type)
+{
+    return type.tag == TYPE_BOOL && type.pointers == 0;
+}
+
+bool TypeIsChar(Type type)
+{
+    return type.tag == TYPE_CHAR && type.pointers == 0;
+}
+
+bool TypeIsInt(Type type)
+{
+    return type.tag == TYPE_INT && type.pointers == 0;
+}
+
+bool TypeIsFloat(Type type)
+{
+    return type.tag == TYPE_FLOAT && type.pointers == 0;
+}
+
+bool TypeIsNumerical(Type type)
+{
+    return TypeIsFloat(type) || TypeIsInt(type);
+}
+
+bool TypeIsString(Type type)
+{
+    return type.tag == TYPE_CHAR && type.pointers == 1;
+}
+
+bool TypeIsArray(Type type)
+{
+    return type.pointers > 0;
+}
+
+bool TypeIsAssignable(Type variable, Type expression)
+{
+    return TypeEquals(variable, expression) ||
+           (TypeIsInt(variable) && TypeIsFloat(expression)) ||
+           (TypeIsFloat(variable) && TypeIsInt(expression)) ||
+           (TypeIsChar(variable) && TypeIsFloat(expression)) ||
+           (TypeIsChar(variable) && TypeIsInt(expression));
 }
 

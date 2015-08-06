@@ -1,0 +1,13 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int main() {
+    bool b;
+    char[] s;
+    b = null > s;
+    return 0;
+}
+

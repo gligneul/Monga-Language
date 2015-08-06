@@ -1,0 +1,13 @@
+
+(func int main<7>
+  (block
+    (var char[] s1<8>)
+    (var char[] s2<9>)
+    (var bool b<10>)
+    (assign b<10> (== s1<8>:char[] s2<9>:char[]):bool)
+    (assign b<10> (== s1<8>:char[] null:char[]):bool)
+    (assign b<10> (== null:char[] s1<8>:char[]):bool)
+    (assign b<10> (!= s1<8>:char[] s2<9>:char[]):bool)
+    (assign b<10> (!= s1<8>:char[] null:char[]):bool)
+    (assign b<10> (!= null:char[] s1<8>:char[]):bool)
+    (return 0:int)))

@@ -1,0 +1,28 @@
+
+(func int main<7>
+  (block
+    (var int a<8>)
+    (block
+      (block
+        (block
+          (block
+            (block
+              (block
+                (block
+                  (block
+                    (block
+                      (block
+                        (block
+                          (block
+                            (block
+                              (block
+                                (block
+                                  (block
+                                    (block
+                                      (block
+                                        (block
+                                          (block
+                                            (var float[] a<11>)
+                                            (assign a<11> null:float[])))))))))))
+                        (assign a<8> 10:int)))))))))))
+    (return 0:int)))

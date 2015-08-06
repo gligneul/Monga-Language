@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * ast_print.c
  */
@@ -11,47 +10,47 @@
 #include "ast.h"
 #include "ast_print.h"
 
-static void print_spaces(int spaces);
-static void print_decl(int spaces, ast_decl_t* node);
-static void print_cmd(int spaces, ast_cmd_t* node);
-static void print_exp(int space, ast_exp_t* node);
-static void print_cast(ast_cast_tag tag);
-static void print_var(ast_var_t* var);
+static void printIndentation(int spaces);
+static void printDeclaration(int spaces, AstDeclaration* node);
+static void printStatement(int spaces, AstStatement* node);
+static void printExpression(int space, AstExpression* node);
+static void printCast(AstCastTag tag);
+static void printVariable(AstVariable* var);
 
-void ast_print(ast_decl_t* tree)
+void AstPrintTree(AstDeclaration* tree)
 {
-    print_decl(0, tree);
+    printDeclaration(0, tree);
 }
 
-const char* ast_print_unop(ast_unop operator)
+const char* AstPrintUnaryOperator(AstUnaryOperator operator)
 {
     switch (operator) {
-    case OP_NEGATE: return "-";
-    case OP_NOT:    return "not";
+    case AST_OPERATOR_NEGATE: return "-";
+    case AST_OPERATOR_NOT:    return "not";
     }
     return 0;
 }
 
-const char* ast_print_binop(ast_binop operator)
+const char* AstPrintBinaryOperator(AstBinaryOperator operator)
 {
     switch (operator) {
-    case OP_ADD:            return "+";
-    case OP_SUB:            return "-";
-    case OP_MUL:            return "*";
-    case OP_DIV:            return "/";
-    case OP_EQUALS:         return "==";
-    case OP_NOT_EQUALS:     return "!=";
-    case OP_LESS:           return "<";
-    case OP_LESS_EQUALS:    return "<=";
-    case OP_GREATER:        return ">";
-    case OP_GREATER_EQUALS: return ">=";
-    case OP_AND:            return "and";
-    case OP_OR:             return "or";
+    case AST_OPERATOR_ADD:            return "+";
+    case AST_OPERATOR_SUB:            return "-";
+    case AST_OPERATOR_MUL:            return "*";
+    case AST_OPERATOR_DIV:            return "/";
+    case AST_OPERATOR_EQUALS:         return "==";
+    case AST_OPERATOR_NOT_EQUALS:     return "!=";
+    case AST_OPERATOR_LESS:           return "<";
+    case AST_OPERATOR_LESS_EQUALS:    return "<=";
+    case AST_OPERATOR_GREATER:        return ">";
+    case AST_OPERATOR_GREATER_EQUALS: return ">=";
+    case AST_OPERATOR_AND:            return "and";
+    case AST_OPERATOR_OR:             return "or";
     }
     return 0;
 }
 
-static void print_spaces(int spaces)
+static void printIndentation(int spaces)
 {
     int i;
     printf("\n");
@@ -59,96 +58,94 @@ static void print_spaces(int spaces)
         printf(" ");
 }
 
-static void print_decl(int spaces, ast_decl_t* node)
+static void printDeclaration(int spaces, AstDeclaration* node)
 {
     if (!node) return;
 
-    print_spaces(spaces);
+    printIndentation(spaces);
     printf("(");
 
     switch (node->tag) {
-    case DECL_FUNCTION:
+    case AST_DECLARATION_FUNCTION:
         printf("func");
         break;
-    case DECL_PROTOTYPE:
-        printf("proto");
-        break;
-    case DECL_VARIABLE:
+    case AST_DECLARATION_VARIABLE:
         printf("var");
         break;
     }
 
     printf(" ");
-    type_print(node->type);
+    TypePrint(node->type);
     printf(" %s<%d>", node->identifier, node->line);
 
     switch (node->tag) {
-    case DECL_FUNCTION:
-        print_decl(spaces + 2, node->u.function_.parameters);
-        print_cmd(spaces + 2, node->u.function_.block);
+    case AST_DECLARATION_FUNCTION:
+        printDeclaration(spaces + 2, node->u.function_.parameters);
+        printStatement(spaces + 2, node->u.function_.block);
         break;
-    case DECL_PROTOTYPE:
-        print_decl(spaces + 2, node->u.prototype_.parameters);
-        break;
-    case DECL_VARIABLE:
+    case AST_DECLARATION_VARIABLE:
         break;
     }
 
     printf(")");
     if (!spaces) printf("\n");
-    print_decl(spaces, node->next);
+    printDeclaration(spaces, node->next);
 }
 
-static void print_cmd(int spaces, ast_cmd_t* node)
+static void printStatement(int spaces, AstStatement* node)
 {
     if (!node) return;
 
-    print_spaces(spaces);
-    if (node->tag != CMD_CALL)
+    printIndentation(spaces);
+    if (node->tag != AST_STATEMENT_CALL)
         printf("(");
 
     switch (node->tag) {
-    case CMD_BLOCK:
+    case AST_STATEMENT_BLOCK:
         printf("block");
-        print_decl(spaces + 2, node->u.block_.variables);
-        print_cmd(spaces + 2, node->u.block_.commands);
+        printDeclaration(spaces + 2, node->u.block_.variables);
+        printStatement(spaces + 2, node->u.block_.statements);
         break;
-    case CMD_IF:
+    case AST_STATEMENT_IF:
         printf("if");
-        print_exp(1, node->u.if_.expression);
-        print_cmd(spaces + 4, node->u.if_.command_if);
-        print_cmd(spaces + 4, node->u.if_.command_else);
+        printExpression(1, node->u.if_.expression);
+        printStatement(spaces + 4, node->u.if_.then_statement);
+        printStatement(spaces + 4, node->u.if_.else_statement);
         break;
-    case CMD_WHILE:
+    case AST_STATEMENT_WHILE:
         printf("while");
-        print_exp(1, node->u.while_.expression);
-        print_cmd(spaces + 2, node->u.while_.command);
+        printExpression(1, node->u.while_.expression);
+        printStatement(spaces + 2, node->u.while_.statement);
         break;
-    case CMD_ASSIGN:
+    case AST_STATEMENT_ASSIGN:
         printf("assign ");
-        print_var(node->u.assign_.variable);
-        print_exp(1, node->u.assign_.expression);
+        printVariable(node->u.assign_.variable);
+        printExpression(1, node->u.assign_.expression);
         break;
-    case CMD_DELETE:
+    case AST_STATEMENT_DELETE:
         printf("delete");
-        print_exp(1, node->u.delete_.expression);
+        printExpression(1, node->u.delete_.expression);
         break;
-    case CMD_RETURN:
+    case AST_STATEMENT_PRINT:
+        printf("print");
+        printExpression(1, node->u.print_.expressions);
+        break;
+    case AST_STATEMENT_RETURN:
         printf("return");
         if (node->u.return_.expression)
-            print_exp(1, node->u.return_.expression);
+            printExpression(1, node->u.return_.expression);
         break;
-    case CMD_CALL:
-        print_exp(0, node->u.call_);
+    case AST_STATEMENT_CALL:
+        printExpression(0, node->u.call_);
         break;
     }
 
-    if (node->tag != CMD_CALL)
+    if (node->tag != AST_STATEMENT_CALL)
         printf(")");
-    print_cmd(spaces, node->next);
+    printStatement(spaces, node->next);
 }
 
-static void print_exp(int space, ast_exp_t* node)
+static void printExpression(int space, AstExpression* node)
 {
     if (!node) return;
 
@@ -156,93 +153,96 @@ static void print_exp(int space, ast_exp_t* node)
         printf(" ");
 
     switch (node->tag) {
-    case EXP_KINT:
+    case AST_EXPRESSION_KINT:
         printf("%d", node->u.kint_);
         break;
-    case EXP_KFLOAT:
+    case AST_EXPRESSION_KFLOAT:
         printf("%f", node->u.kfloat_);
         break;
-    case EXP_STRING:
+    case AST_EXPRESSION_STRING:
         printf("\"%s\"", node->u.string_);
         break;
-    case EXP_NULL:
+    case AST_EXPRESSION_NULL:
         printf("null");
         break;
-    case EXP_BOOL:
-        printf("%s", node->u.bool_ ? "true" : "false");
+    case AST_EXPRESSION_KBOOL:
+        printf("%s", node->u.kbool_ ? "true" : "false");
         break;
-    case EXP_CALL_ID:
-        printf("(%s", node->u.call_id_.identifier);
-        print_exp(1, node->u.call_id_.expressions);
-        printf(")");
+    case AST_EXPRESSION_CALL:
+        if (node->u.call_.is_declaration)
+        {
+            AstDeclaration* decl = node->u.call_.u.declaration_;
+            printf("(%s<%d>", decl->identifier, decl->line);
+            printExpression(1, node->u.call_.expressions);
+            printf(")");
+        } else {
+            printf("(%s", node->u.call_.u.identifier_);
+            printExpression(1, node->u.call_.expressions);
+            printf(")");
+        }
         break;
-    case EXP_CALL_DECL:
-        printf("(%s<%d>", node->u.call_decl_.declaration->identifier,
-                node->u.call_decl_.declaration->line);
-        print_exp(1, node->u.call_decl_.expressions);
-        printf(")");
+    case AST_EXPRESSION_VARIABLE:
+        printVariable(node->u.variable_);
         break;
-    case EXP_VARIABLE:
-        print_var(node->u.variable_);
-        break;
-    case EXP_NEW:
+    case AST_EXPRESSION_NEW:
         printf("(new ");
-        type_print(node->u.new_.type);
+        TypePrint(node->u.new_.type);
         printf("[");
-        print_exp(0, node->u.new_.expression);
+        printExpression(0, node->u.new_.expression);
         printf("])");
         break;
-    case EXP_UNARY:
+    case AST_EXPRESSION_UNARY:
         printf("(");
-        printf(ast_print_unop(node->u.unary_.operator));
-        print_exp(1, node->u.unary_.expression);
+        printf("%s", AstPrintUnaryOperator(node->u.unary_.operator));
+        printExpression(1, node->u.unary_.expression);
         printf(")");
         break;
-    case EXP_BINARY:
+    case AST_EXPRESSION_BINARY:
         printf("(");
-        printf(ast_print_binop(node->u.binary_.operator));
-        print_exp(1, node->u.binary_.expression_left);
-        print_exp(1, node->u.binary_.expression_right);
+        printf("%s", AstPrintBinaryOperator(node->u.binary_.operator));
+        printExpression(1, node->u.binary_.expression_left);
+        printExpression(1, node->u.binary_.expression_right);
         printf(")");
         break;
-    case EXP_CAST:
+    case AST_EXPRESSION_CAST:
         printf("(");
-        print_cast(node->u.cast_.tag);
-        print_exp(1, node->u.cast_.expression);
+        printCast(node->u.cast_.tag);
+        printExpression(1, node->u.cast_.expression);
         printf(")");
         break;
     }
 
     if (node->type.tag != TYPE_UNDEFINED) {
         printf(":");
-        type_print(node->type);
+        TypePrint(node->type);
     }
 
-    print_exp(1, node->next);
+    printExpression(1, node->next);
 }
 
-static void print_cast(ast_cast_tag tag)
+static void printCast(AstCastTag tag)
 {
     switch (tag) {
-    case CAST_INT_TO_FLOAT: printf("int->float"); break;
-    case CAST_FLOAT_TO_INT: printf("float->int"); break;
+    case AST_CAST_INT_TO_FLOAT: printf("int->float"); break;
+    case AST_CAST_FLOAT_TO_INT: printf("float->int"); break;
     }
 }
 
-static void print_var(ast_var_t* node)
+static void printVariable(AstVariable* node)
 {
     switch (node->tag) {
-    case VAR_IDENTIFIER:
-        printf("%s", node->u.identifier_);
+    case AST_VARIABLE_REFERENCE:
+        if (node->u.reference_.is_declaration) {
+            AstDeclaration* decl = node->u.reference_.u.declaration_;
+            printf("%s<%d>", decl->identifier, decl->line);
+        } else {
+            printf("%s", node->u.reference_.u.identifier_);
+        }
         break;
-    case VAR_DECLARATION:
-        printf("%s<%d>", node->u.declaration_->identifier,
-            node->u.declaration_->line);
-        break;
-    case VAR_ARRAY:
-        print_exp(0, node->u.array_.location);
+    case AST_VARIABLE_ARRAY:
+        printExpression(0, node->u.array_.location);
         printf("[");
-        print_exp(0, node->u.array_.offset);
+        printExpression(0, node->u.array_.offset);
         printf("]");
         break;
     }

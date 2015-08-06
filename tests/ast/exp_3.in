@@ -1,14 +1,22 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
  *
  * exp_3.in
  */
 
-char[] foo(int x);
-float bar(int y, int z);
-int boo(char w);
+char[] foo(int x) {
+    return new char[x];
+}
+
+float bar(int y, int z) {
+    return y + z;
+}
+
+int boo(char w) {
+    return w;
+}
 
 int main() {
     int a, b, c, d, e;

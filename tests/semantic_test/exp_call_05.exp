@@ -1,0 +1,13 @@
+
+(func int foo<7>
+  (var int a<7>)
+  (var char[] s<7>)
+  (var float f<7>)
+  (block
+    (return (float->int (/ f<7>:float (int->float s<7>:char[][a<7>:int]:int):float):float):int)))
+
+(func int main<11>
+  (block
+    (var int a<12>)
+    (assign a<12> (foo<7> 1:int null:char[] 1.100000:float):int)
+    (return 0:int)))

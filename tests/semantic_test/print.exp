@@ -1,0 +1,18 @@
+
+(func void foo<9>
+  (block))
+
+(func char[] bar<11>
+  (var char c<11>)
+  (block
+    (return null:char[])))
+
+(func int main<13>
+  (block
+    (var int a<14>)
+    (var float b<15>)
+    (print (/ 10:int 10:int):int)
+    (print (foo<9>):void (+ (int->float a<14>:int):float b<15>:float):float)
+    (print (bar<11> 97:int):char[])
+    (print "hello":char[])
+    (return a<14>:int)))

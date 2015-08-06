@@ -1,0 +1,10 @@
+
+(func void foo<7>
+  (block))
+
+(func int main<9>
+  (block
+    (block
+      (var int foo<11>))
+    (foo<7>):void
+    (return 0:int)))

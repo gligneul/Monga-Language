@@ -1,0 +1,9 @@
+
+(func void foo<7>
+  (block))
+
+(func int main<9>
+  (block
+    (var int foo<10>)
+    (assign foo<10> 2:int)
+    (return 0:int)))

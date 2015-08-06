@@ -1,0 +1,12 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int foo(bool cond) {
+    while (true) {
+        if (cond)
+            return 1;
+    }
+}
+

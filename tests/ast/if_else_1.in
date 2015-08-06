@@ -1,13 +1,13 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
  *
  * if_else_1.in
  */
 
-void do_stuff();
-void other_stuff();
+void do_stuff() {}
+void other_stuff() {}
 
 int main() {
     int x, y;

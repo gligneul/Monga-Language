@@ -1,7 +1,7 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
  *
  * tokens.in
  */
@@ -15,6 +15,7 @@ while
 return
 new
 delete
+print
 null
 bool
 true

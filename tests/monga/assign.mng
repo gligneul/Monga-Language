@@ -1,0 +1,29 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int global;
+
+void printGlobal() {
+    print global, "\n";
+}
+
+int main() {
+    bool b;
+    char c;
+    float f;
+    int i;
+    global = 25;
+    b = false;
+    c = 'a';
+    f = 3.3;
+    i = 357;
+    printGlobal();
+    print b, "\n";
+    print c, "\n";
+    print f, "\n";
+    print i, "\n";
+    return 0;
+}

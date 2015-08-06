@@ -1,0 +1,15 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int main() {
+    bool a;
+    a = 3.0 == 1.2;
+    a = 3.0 != 1.2;
+    a = 2.0 == 20;
+    a = 2.0 != 20;
+    return 0;
+}
+

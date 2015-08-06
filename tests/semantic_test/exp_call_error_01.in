@@ -1,0 +1,15 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int foo() { return 0; }
+
+int main() {
+    int a;
+    float foo;
+    a = foo();
+    return 0;
+}
+

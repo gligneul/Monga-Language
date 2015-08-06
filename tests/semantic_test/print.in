@@ -1,0 +1,23 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ *
+ * print.in
+ */
+
+void foo() {}
+
+char[] bar(char c) { return null; }
+
+int main() {
+    int a;
+    float b;
+
+    print 10 / 10;
+    print foo(), a + b;
+    print bar('a');
+    print "hello";
+    return a;
+}
+

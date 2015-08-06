@@ -1,9 +1,9 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * vector.h
+ * Abstract data type that represents a dynamic array
  */
 
 #ifndef VECTOR_H
@@ -12,22 +12,37 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-/* Abstract data type for a vector */
-typedef struct vector_t vector_t;
+typedef struct Vector Vector;
 
-vector_t* vector_create();
-void vector_destroy(vector_t* vector);
+/* Creates an empty vector */
+Vector* VectorCreate();
 
-bool vector_empty(vector_t* vector);
-size_t vector_size(vector_t* vector);
+/* Destroys the vector, doesn't free it's elements */
+void VectorDestroy(Vector* vector);
 
-void vector_push(vector_t* vector, void* value);
-void* vector_pop(vector_t* vector);
-void* vector_peek(vector_t* vector);
+/* Returns true if the size == 0 */
+bool VectorEmpty(Vector* vector);
 
-void* vector_get(vector_t* vector, size_t pos);
-void vector_set(vector_t* vector, size_t pos, void* value);
-void vector_resize(vector_t* vector, size_t size);
+/* Returns the number of elements */
+size_t VectorSize(Vector* vector);
+
+/* Inserts an element in the last position */
+void VectorPush(Vector* vector, void* value);
+
+/* Removes the element at the last position and returns it */
+void* VectorPop(Vector* vector);
+
+/* Returns the elements at the last position */
+void* VectorPeek(Vector* vector);
+
+/* Obtains the element at the passed position */
+void* VectorGet(Vector* vector, size_t pos);
+
+/* Sets the element at the passed position */
+void VectorSet(Vector* vector, size_t pos, void* value);
+
+/* Change the vector size */
+void VectorResize(Vector* vector, size_t size);
 
 #endif
 

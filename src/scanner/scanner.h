@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * scanner.h
  * Reads the stdin and converts it to tokens.
@@ -13,16 +12,15 @@
 #include "util/vector.h"
 
 /* Obtains the current line in scanner input */
-int scanner_line();
+int ScannerGetCurrentLine();
 
 /* Obtains the last token read */
-char* scanner_token();
+char* ScannerGetCurrentToken();
 
 /* Obtains the literals strings */
-vector_t* scanner_get_strings();
+Vector* ScannerGetStrings();
 
-/* Lex scanner prototype
- * Returns the token read */
+/* Lex scanner prototype, returns the token read */
 int yylex();
 
 #endif

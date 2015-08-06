@@ -1,0 +1,1 @@
+monga: error at line 10, mismatch type in delete's expression, expected an array, read 'void'

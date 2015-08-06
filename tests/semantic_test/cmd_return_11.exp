@@ -1,0 +1,7 @@
+
+(func void bar<7>
+  (block))
+
+(func void foo<9>
+  (block
+    (return (bar<7>):void)))

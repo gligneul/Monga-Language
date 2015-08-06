@@ -1,9 +1,12 @@
 
-(proto void do_stuff<9>)
+(func void do_stuff<9>
+  (block))
 
-(proto void other_stuff<10>)
+(func void other_stuff<10>
+  (block))
 
-(proto void even_more<11>)
+(func void even_more<11>
+  (block))
 
 (func int main<13>
   (block

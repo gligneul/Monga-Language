@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * ast.c
  */
@@ -10,10 +9,10 @@
 
 #include "util/new.h"
 
-ast_decl_t* ast_decl_variable(type_t type, char* identifier, int line)
+AstDeclaration* AstDeclarationVariable(Type type, char* identifier, int line)
 {
-    ast_decl_t* node = NEW(ast_decl_t);
-    node->tag = DECL_VARIABLE;
+    AstDeclaration* node = NEW(AstDeclaration);
+    node->tag = AST_DECLARATION_VARIABLE;
     node->type = type;
     node->identifier = identifier;
     node->line = line;
@@ -24,82 +23,77 @@ ast_decl_t* ast_decl_variable(type_t type, char* identifier, int line)
     return node;
 }
 
-ast_decl_t* ast_decl_function(type_t type, char* identifier, int line,
-        ast_decl_t* parameters, ast_cmd_t* block)
+AstDeclaration* AstDeclarationFunction(Type type, char* identifier, int line,
+        AstDeclaration* parameters, AstStatement* block)
 {
-    ast_decl_t* node = NEW(ast_decl_t);
-    node->tag = DECL_FUNCTION;
+    AstDeclaration* node = NEW(AstDeclaration);
+    node->tag = AST_DECLARATION_FUNCTION;
     node->type = type;
     node->identifier = identifier;
     node->line = line;
     node->next = NULL;
     node->last = node;
     node->u.function_.parameters = parameters;
+    node->u.function_.n_parameters = 0;
+    while (parameters != NULL) {
+        node->u.function_.n_parameters++;
+        parameters = parameters->next;
+    }
     node->u.function_.block = block;
     node->u.function_.space = 0;
     return node;
 }
 
-ast_decl_t* ast_decl_prototype(type_t type, char* identifier, int line,
-        ast_decl_t* parameters)
+AstStatement* AstStatementBlock(AstDeclaration* variables,
+        AstStatement* statements, int line)
 {
-    ast_decl_t* node = NEW(ast_decl_t);
-    node->tag = DECL_PROTOTYPE;
-    node->type = type;
-    node->identifier = identifier;
+    AstStatement* node = NEW(AstStatement);
+    node->tag = AST_STATEMENT_BLOCK;
     node->line = line;
-    node->next = NULL;
-    node->last = node;
-    node->u.prototype_.parameters = parameters;
-    return node;
-}
-
-ast_cmd_t* ast_cmd_block(ast_decl_t* variables, ast_cmd_t* commands,
-        int line)
-{
-    ast_cmd_t* node = NEW(ast_cmd_t);
-    node->tag = CMD_BLOCK;
-    node->line = line;
+    node->returned = false;
     node->next = NULL;
     node->last = node;
     node->u.block_.variables = variables;
-    node->u.block_.commands = commands;
+    node->u.block_.statements = statements;
     return node;
 }
 
-ast_cmd_t* ast_cmd_if(ast_exp_t* expression, ast_cmd_t* command_if,
-        ast_cmd_t* command_else, int line)
+AstStatement* AstStatementIf(AstExpression* expression,
+        AstStatement* then_statement, AstStatement* else_statement, int line)
 {
-    ast_cmd_t* node = NEW(ast_cmd_t);
-    node->tag = CMD_IF;
+    AstStatement* node = NEW(AstStatement);
+    node->tag = AST_STATEMENT_IF;
     node->line = line;
+    node->returned = false;
     node->next = NULL;
     node->last = node;
     node->u.if_.expression = expression;
-    node->u.if_.command_if = command_if;
-    node->u.if_.command_else = command_else;
+    node->u.if_.then_statement = then_statement;
+    node->u.if_.else_statement = else_statement;
     return node;
 }
 
-ast_cmd_t* ast_cmd_while(ast_exp_t* expression, ast_cmd_t* command,
-        int line)
+AstStatement* AstStatementWhile(AstExpression* expression,
+        AstStatement* statement, int line)
 {
-    ast_cmd_t* node = NEW(ast_cmd_t);
-    node->tag = CMD_WHILE;
+    AstStatement* node = NEW(AstStatement);
+    node->tag = AST_STATEMENT_WHILE;
     node->line = line;
+    node->returned = false;
     node->next = NULL;
     node->last = node;
     node->u.while_.expression = expression;
-    node->u.while_.command = command;
+    node->u.while_.statement = statement;
     return node;
 }
 
-ast_cmd_t* ast_cmd_assign(ast_var_t* variable, ast_exp_t* expression,
-        int line)
+AstStatement* AstStatementAssign(AstVariable* variable,
+        AstExpression* expression, int line)
 {
-    ast_cmd_t* node = NEW(ast_cmd_t);
-    node->tag = CMD_ASSIGN;
+    AstStatement* node = NEW(AstStatement);
+    node->tag = AST_STATEMENT_ASSIGN;
     node->line = line;
+    node->returned = false;
     node->next = NULL;
     node->last = node;
     node->u.assign_.variable = variable;
@@ -107,129 +101,146 @@ ast_cmd_t* ast_cmd_assign(ast_var_t* variable, ast_exp_t* expression,
     return node;
 }
 
-ast_cmd_t* ast_cmd_delete(ast_exp_t* expression, int line)
+AstStatement* AstStatementDelete(AstExpression* expression, int line)
 {
-    ast_cmd_t* node = NEW(ast_cmd_t);
-    node->tag = CMD_DELETE;
+    AstStatement* node = NEW(AstStatement);
+    node->tag = AST_STATEMENT_DELETE;
     node->line = line;
+    node->returned = false;
     node->next = NULL;
     node->last = node;
     node->u.delete_.expression = expression;
     return node;
 }
 
-ast_cmd_t* ast_cmd_return(ast_exp_t* expression, int line)
+AstStatement* AstStatementPrint(AstExpression* expressions, int line)
 {
-    ast_cmd_t* node = NEW(ast_cmd_t);
-    node->tag = CMD_RETURN;
+    AstStatement* node = NEW(AstStatement);
+    node->tag = AST_STATEMENT_PRINT;
     node->line = line;
+    node->returned = false;
+    node->next = NULL;
+    node->last = node;
+    node->u.print_.expressions = expressions;
+    return node;
+}
+
+AstStatement* AstStatementReturn(AstExpression* expression, int line)
+{
+    AstStatement* node = NEW(AstStatement);
+    node->tag = AST_STATEMENT_RETURN;
+    node->line = line;
+    node->returned = false;
     node->next = NULL;
     node->last = node;
     node->u.return_.expression = expression;
     return node;
 }
 
-ast_cmd_t* ast_cmd_call(ast_exp_t* call, int line)
+AstStatement* AstStatementCall(AstExpression* call, int line)
 {
-    ast_cmd_t* node = NEW(ast_cmd_t);
-    node->tag = CMD_CALL;
+    AstStatement* node = NEW(AstStatement);
+    node->tag = AST_STATEMENT_CALL;
     node->line = line;
+    node->returned = false;
     node->next = NULL;
     node->last = node;
     node->u.call_ = call;
     return node;
 }
 
-ast_exp_t* ast_exp_kint(int value)
+AstExpression* AstExpressionKBool(bool value)
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_KINT;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_KBOOL;
     node->line = 0;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
+    node->next = NULL;
+    node->last = node;
+    node->u.kbool_ = value;
+    return node;
+}
+
+AstExpression* AstExpressionKInt(int value)
+{
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_KINT;
+    node->line = 0;
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
     node->u.kint_ = value;
     return node;
 }
 
-ast_exp_t* ast_exp_kfloat(float value)
+AstExpression* AstExpressionKFloat(float value)
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_KFLOAT;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_KFLOAT;
     node->line = 0;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
     node->u.kfloat_ = value;
     return node;
 }
 
-ast_exp_t* ast_exp_string(char* string)
+AstExpression* AstExpressionString(char* string)
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_STRING;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_STRING;
     node->line = 0;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
     node->u.string_ = string;
     return node;
 }
 
-ast_exp_t* ast_exp_null()
+AstExpression* AstExpressionNull()
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_NULL;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_NULL;
     node->line = 0;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
     return node;
 }
 
-ast_exp_t* ast_exp_bool(int value)
+AstExpression* AstExpressionCall(char* identifier, AstExpression* expressions,
+        int line)
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_BOOL;
-    node->line = 0;
-    node->type = type_create(TYPE_UNDEFINED, 0);
-    node->next = NULL;
-    node->last = node;
-    node->u.bool_ = value;
-    return node;
-}
-
-ast_exp_t* ast_exp_call(char* identifier, ast_exp_t* expressions, int line)
-{
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_CALL_ID;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_CALL;
     node->line = line;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
-    node->u.call_id_.identifier = identifier;
-    node->u.call_id_.expressions = expressions;
+    node->u.call_.is_declaration = false;
+    node->u.call_.u.identifier_ = identifier;
+    node->u.call_.expressions = expressions;
     return node;
 }
 
-ast_exp_t* ast_exp_variable(ast_var_t* variable, int line)
+AstExpression* AstExpressionVariable(AstVariable* variable, int line)
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_VARIABLE;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_VARIABLE;
     node->line = line;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
     node->u.variable_ = variable;
     return node;
 }
 
-ast_exp_t* ast_exp_new(type_t type, ast_exp_t* expression, int line)
+AstExpression* AstExpressionNew(Type type, AstExpression* expression, int line)
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_NEW;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_NEW;
     node->line = line;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
     node->u.new_.type = type;
@@ -237,13 +248,13 @@ ast_exp_t* ast_exp_new(type_t type, ast_exp_t* expression, int line)
     return node;
 }
 
-ast_exp_t* ast_exp_unary(ast_unop operator, ast_exp_t* expression,
-        int line)
+AstExpression* AstExpressionUnary(AstUnaryOperator operator,
+        AstExpression* expression, int line)
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_UNARY;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_UNARY;
     node->line = line;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
     node->u.unary_.operator = operator;
@@ -251,13 +262,14 @@ ast_exp_t* ast_exp_unary(ast_unop operator, ast_exp_t* expression,
     return node;
 }
 
-ast_exp_t* ast_exp_binary(ast_binop operator,
-        ast_exp_t* expression_left, ast_exp_t* expression_right, int line)
+AstExpression* AstExpressionBinary(AstBinaryOperator operator,
+        AstExpression* expression_left, AstExpression* expression_right,
+        int line)
 {
-    ast_exp_t* node = NEW(ast_exp_t);
-    node->tag = EXP_BINARY;
+    AstExpression* node = NEW(AstExpression);
+    node->tag = AST_EXPRESSION_BINARY;
     node->line = line;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->next = NULL;
     node->last = node;
     node->u.binary_.operator = operator;
@@ -266,34 +278,36 @@ ast_exp_t* ast_exp_binary(ast_binop operator,
     return node;
 }
 
-void ast_exp_cast(ast_exp_t* expression, type_t goal_type,
-        ast_cast_tag cast_tag)
+void AstExpressionCast(AstExpression* expression, Type goal_type,
+        AstCastTag cast_tag)
 {
-    ast_exp_t* subexpression = NEW(ast_exp_t);
+    AstExpression* subexpression = NEW(AstExpression);
     *subexpression = *expression;
     subexpression->next = NULL;
-    expression->tag = EXP_CAST;
+    expression->tag = AST_EXPRESSION_CAST;
     expression->type = goal_type;
     expression->u.cast_.tag = cast_tag;
     expression->u.cast_.expression = subexpression;
 }
 
-ast_var_t* ast_var_identifier(char* identifier, int line)
+AstVariable* AstVariableReference(char* identifier, int line)
 {
-    ast_var_t* node = NEW(ast_var_t);
-    node->tag = VAR_IDENTIFIER;
+    AstVariable* node = NEW(AstVariable);
+    node->tag = AST_VARIABLE_REFERENCE;
     node->line = line;
-    node->type = type_create(TYPE_UNDEFINED, 0);
-    node->u.identifier_ = identifier;
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
+    node->u.reference_.is_declaration = false;
+    node->u.reference_.u.identifier_ = identifier;
     return node;
 }
 
-ast_var_t* ast_var_array(ast_exp_t* location, ast_exp_t* offset, int line)
+AstVariable* AstVariableArray(AstExpression* location, AstExpression* offset,
+        int line)
 {
-    ast_var_t* node = NEW(ast_var_t);
-    node->tag = VAR_ARRAY;
+    AstVariable* node = NEW(AstVariable);
+    node->tag = AST_VARIABLE_ARRAY;
     node->line = line;
-    node->type = type_create(TYPE_UNDEFINED, 0);
+    node->type = TypeCreate(TYPE_UNDEFINED, 0);
     node->u.array_.location = location;
     node->u.array_.offset = offset;
     return node;

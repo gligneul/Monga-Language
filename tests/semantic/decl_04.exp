@@ -1,9 +1,0 @@
-
-(proto void foo<7>)
-
-(proto void foo<8>)
-
-(func int main<10>
-  (block
-    (foo<7>):void
-    (return 0:int)))

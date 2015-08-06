@@ -1,0 +1,1 @@
+monga: error at line 9, mismatch type in 'not' unary operation, expected 'bool', read 'undefined'

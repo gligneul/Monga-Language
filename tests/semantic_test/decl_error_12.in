@@ -1,0 +1,18 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int main() {
+    int i;
+    if (true) {
+        if (true) {
+            char c;
+            c = 2;
+        }
+    }
+    i = c;
+    return 0;
+}
+

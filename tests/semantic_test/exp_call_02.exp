@@ -1,0 +1,11 @@
+
+(func int foo<7>
+  (var int a<7>)
+  (block
+    (return a<7>:int)))
+
+(func int main<11>
+  (block
+    (var int a<12>)
+    (assign a<12> (foo<7> a<12>:int):int)
+    (return 0:int)))

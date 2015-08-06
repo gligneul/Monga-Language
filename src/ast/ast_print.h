@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * ast_print.h
  * Responsable for printing the ast.
@@ -13,12 +12,12 @@
 #include "ast.h"
 
 /* Prints the ast tree in stdout */
-void ast_print(ast_decl_t* tree);
+void AstPrintTree(AstDeclaration* tree);
 
 /* Gets the string representation of an unary operator */
-const char* ast_print_unop(ast_unop operator);
+const char* AstPrintUnaryOperator(AstUnaryOperator operator);
 
 /* Gets the string representation of a binary operator */
-const char* ast_print_binop(ast_binop operator);
+const char* AstPrintBinaryOperator(AstBinaryOperator operator);
 
 #endif

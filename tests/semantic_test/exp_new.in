@@ -1,0 +1,16 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int main() {
+    bool[] b;
+    char[] s;
+    float[][][] f;
+    b = new bool[20];
+    s = new char[123];
+    f = new float[][][20];
+    return 0;
+}
+

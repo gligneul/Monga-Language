@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * parser.y
  */
@@ -14,9 +13,9 @@
 #include "scanner/scanner.h"
 #include "util/error.h"
 
-void yyerror(char* message);
+void yyerror(const char* message);
 
-ast_decl_t* parser_ast = NULL;
+AstDeclaration* parser_ast = NULL;
 %}
 
 %token <int_> TK_VOID
@@ -30,6 +29,7 @@ ast_decl_t* parser_ast = NULL;
 %token <int_> TK_RETURN
 %token <int_> TK_NEW
 %token <int_> TK_DELETE
+%token <int_> TK_PRINT
 %token <int_> TK_NULL
 %token <int_> TK_TRUE
 %token <int_> TK_FALSE
@@ -55,11 +55,11 @@ ast_decl_t* parser_ast = NULL;
         char* str;
         int line;
     } identifier_;
-    type_t type_t_;
-    ast_decl_t* ast_decl_t_;
-    ast_cmd_t* ast_cmd_t_;
-    ast_exp_t* ast_exp_t_;
-    ast_var_t* ast_var_t_;
+    Type Type_;
+    AstDeclaration* AstDeclaration_;
+    AstStatement* AstStatement_;
+    AstExpression* AstExpression_;
+    AstVariable* AstVariable_;
 };
 
 %nonassoc TKX_IF
@@ -75,12 +75,12 @@ ast_decl_t* parser_ast = NULL;
 %nonassoc '['
 
 %type <int_> '<' '>' '+' '-' '*' '/' '{' '!' ';' '[' '='
-%type <type_t_> base_type type
-%type <ast_decl_t_> declarations variable_declaration identifier_list function_declaration
-                    prototype_declaration parameters parameters_list variables_block
-%type <ast_cmd_t_> block commands_block command
-%type <ast_exp_t_> call expression expression_list
-%type <ast_var_t_> variable
+%type <Type_> base_type type
+%type <AstDeclaration_> declarations variable_declaration identifier_list function_declaration
+                    parameters parameters_list variables_block
+%type <AstStatement_> block commands_block command
+%type <AstExpression_> call expression expression_list
+%type <AstVariable_> variable
 
 %%
 
@@ -98,10 +98,6 @@ declarations        : declarations variable_declaration
                         {
                             $$ = AST_CONCAT($1, $2);
                         }
-                    | declarations prototype_declaration
-                        {
-                            $$ = AST_CONCAT($1, $2);
-                        }
                     | /* empty */
                         {
                             $$ = NULL;
@@ -110,7 +106,7 @@ declarations        : declarations variable_declaration
 
 variable_declaration: type identifier_list ';'
                         {
-                            ast_decl_t* node = $2;
+                            AstDeclaration* node = $2;
                             $$ = $2;
                             while (node) {
                                 node->type = $1;
@@ -132,55 +128,44 @@ type                : type '[' ']'
 
 base_type           : TK_BOOL
                         {
-                            $$ = type_create(TYPE_BOOL, 0);
+                            $$ = TypeCreate(TYPE_BOOL, 0);
                         }
                     | TK_CHAR
                         {
-                            $$ = type_create(TYPE_CHAR, 0);
+                            $$ = TypeCreate(TYPE_CHAR, 0);
                         }
                     | TK_INT
                         {
-                            $$ = type_create(TYPE_INT, 0);
+                            $$ = TypeCreate(TYPE_INT, 0);
                         }
                     | TK_FLOAT
                         {
-                            $$ = type_create(TYPE_FLOAT, 0);
+                            $$ = TypeCreate(TYPE_FLOAT, 0);
                         }
                     ;
 
 identifier_list     : identifier_list ',' TK_ID
                         {
-                            type_t type = type_create(TYPE_UNDEFINED, 0);
-                            ast_decl_t* node = ast_decl_variable(
+                            Type type = TypeCreate(TYPE_UNDEFINED, 0);
+                            AstDeclaration* node = AstDeclarationVariable(
                                     type, $3.str, $3.line);
                             $$ = AST_CONCAT($1, node);
                         }
                     | TK_ID
                         {
-                            type_t type = type_create(TYPE_UNDEFINED, 0);
-                            $$ = ast_decl_variable(type, $1.str, $1.line);
+                            Type type = TypeCreate(TYPE_UNDEFINED, 0);
+                            $$ = AstDeclarationVariable(type, $1.str, $1.line);
                         }
                     ;
 
 function_declaration: type TK_ID '(' parameters ')' block
                         {
-                            $$ = ast_decl_function($1, $2.str, $2.line, $4, $6);
+                            $$ = AstDeclarationFunction($1, $2.str, $2.line, $4, $6);
                         }
                     | TK_VOID TK_ID '(' parameters ')' block
                         {
-                            type_t type = type_create(TYPE_VOID, 0);
-                            $$ = ast_decl_function(type, $2.str, $2.line, $4, $6);
-                        }
-                    ;
-
-prototype_declaration: type TK_ID '(' parameters ')' ';'
-                        {
-                            $$ = ast_decl_prototype($1, $2.str, $2.line, $4);
-                        }
-                    | TK_VOID TK_ID '(' parameters ')' ';'
-                        {
-                            type_t type = type_create(TYPE_VOID, 0);
-                            $$ = ast_decl_prototype(type, $2.str, $2.line, $4);
+                            Type type = TypeCreate(TYPE_VOID, 0);
+                            $$ = AstDeclarationFunction(type, $2.str, $2.line, $4, $6);
                         }
                     ;
 
@@ -196,18 +181,18 @@ parameters          : parameters_list
 
 parameters_list     : parameters_list ',' type TK_ID
                         {
-                            ast_decl_t* node = ast_decl_variable($3, $4.str, $4.line);
+                            AstDeclaration* node = AstDeclarationVariable($3, $4.str, $4.line);
                             $$ = AST_CONCAT($1, node);
                         }
                     | type TK_ID
                         {
-                            $$ = ast_decl_variable($1, $2.str, $2.line);
+                            $$ = AstDeclarationVariable($1, $2.str, $2.line);
                         }
                     ;
 
 block               : '{' variables_block commands_block '}'
                         {
-                            $$ = ast_cmd_block($2, $3, $1);
+                            $$ = AstStatementBlock($2, $3, $1);
                         }
                     ;
 
@@ -233,35 +218,39 @@ commands_block      : commands_block command
 
 command             : TK_IF '(' expression ')' command %prec TKX_IF
                         {
-                            $$ = ast_cmd_if($3, $5, NULL, $1);
+                            $$ = AstStatementIf($3, $5, NULL, $1);
                         }
                     | TK_IF '(' expression ')' command TK_ELSE command
                         {
-                            $$ = ast_cmd_if($3, $5, $7, $1);
+                            $$ = AstStatementIf($3, $5, $7, $1);
                         }
                     | TK_WHILE '(' expression ')' command
                         {
-                            $$ = ast_cmd_while($3, $5, $1);
+                            $$ = AstStatementWhile($3, $5, $1);
                         }
                     | variable '=' expression ';'
                         {
-                            $$ = ast_cmd_assign($1, $3, $2);
+                            $$ = AstStatementAssign($1, $3, $2);
                         }
                     | TK_DELETE expression ';'
                         {
-                            $$ = ast_cmd_delete($2, $1);
+                            $$ = AstStatementDelete($2, $1);
+                        }
+                    | TK_PRINT expression_list ';'
+                        {
+                            $$ = AstStatementPrint($2, $1);
                         }
                     | TK_RETURN ';'
                         {
-                            $$ = ast_cmd_return(NULL, $1);
+                            $$ = AstStatementReturn(NULL, $1);
                         }
                     | TK_RETURN expression ';'
                         {
-                            $$ = ast_cmd_return($2, $1);
+                            $$ = AstStatementReturn($2, $1);
                         }
                     | call ';'
                         {
-                            $$ = ast_cmd_call($1, $2);
+                            $$ = AstStatementCall($1, $2);
                         }
                     | block
                         {
@@ -271,41 +260,41 @@ command             : TK_IF '(' expression ')' command %prec TKX_IF
 
 variable            : TK_ID
                         {
-                            $$ = ast_var_identifier($1.str, $1.line);
+                            $$ = AstVariableReference($1.str, $1.line);
                         }
                     | expression '[' expression ']'
                         {
-                            $$ = ast_var_array($1, $3, $2);
+                            $$ = AstVariableArray($1, $3, $2);
                         }
                     ;
 
 expression          : TK_KINT
                         {
-                            $$ = ast_exp_kint($1);
+                            $$ = AstExpressionKInt($1);
                         }
                     | TK_KFLOAT
                         {
-                            $$ = ast_exp_kfloat($1);
+                            $$ = AstExpressionKFloat($1);
                         }
                     | TK_STRING
                         {
-                            $$ = ast_exp_string($1);
+                            $$ = AstExpressionString($1);
                         }
                     | TK_NULL
                         {
-                            $$ = ast_exp_null();
+                            $$ = AstExpressionNull();
                         }
                     | TK_TRUE
                         {
-                            $$ = ast_exp_bool(1);
+                            $$ = AstExpressionKBool(1);
                         }
                     | TK_FALSE
                         {
-                            $$ = ast_exp_bool(0);
+                            $$ = AstExpressionKBool(0);
                         }
                     | variable
                         {
-                            $$ = ast_exp_variable($1, $1->line);
+                            $$ = AstExpressionVariable($1, $1->line);
                         }
                     | '(' expression ')'
                         {
@@ -317,73 +306,73 @@ expression          : TK_KINT
                         }
                     | TK_NEW type '[' expression ']'
                         {
-                            $$ = ast_exp_new($2, $4, $3);
+                            $$ = AstExpressionNew($2, $4, $3);
                         }
                     | '-' expression %prec TKX_UNARY
                         {
-                            $$ = ast_exp_unary(OP_NEGATE, $2, $1);
+                            $$ = AstExpressionUnary(AST_OPERATOR_NEGATE, $2, $1);
                         }
                     | expression '+' expression
                         {
-                            $$ = ast_exp_binary(OP_ADD, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_ADD, $1, $3, $2);
                         }
                     | expression '-' expression
                         {
-                            $$ = ast_exp_binary(OP_SUB, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_SUB, $1, $3, $2);
                         }
                     | expression '*' expression
                         {
-                            $$ = ast_exp_binary(OP_MUL, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_MUL, $1, $3, $2);
                         }
                     | expression '/' expression
                         {
-                            $$ = ast_exp_binary(OP_DIV, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_DIV, $1, $3, $2);
                         }
                     | expression TK_EQUALS expression
                         {
-                            $$ = ast_exp_binary(OP_EQUALS, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_EQUALS, $1, $3, $2);
                         }
                     | expression TK_NOT_EQUALS expression
                         {
-                            $$ = ast_exp_binary(OP_NOT_EQUALS, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_NOT_EQUALS, $1, $3, $2);
                         }
                     | expression '<' expression
                         {
-                            $$ = ast_exp_binary(OP_LESS, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_LESS, $1, $3, $2);
                         }
                     | expression TK_LESS_EQUALS expression
                         {
-                            $$ = ast_exp_binary(OP_LESS_EQUALS, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_LESS_EQUALS, $1, $3, $2);
                         }
                     | expression '>' expression
                         {
-                            $$ = ast_exp_binary(OP_GREATER, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_GREATER, $1, $3, $2);
                         }
                     | expression TK_GREATER_EQUALS expression
                         {
-                            $$ = ast_exp_binary(OP_GREATER_EQUALS, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_GREATER_EQUALS, $1, $3, $2);
                         }
                     | '!' expression %prec TKX_UNARY
                         {
-                            $$ = ast_exp_unary(OP_NOT, $2, $1);
+                            $$ = AstExpressionUnary(AST_OPERATOR_NOT, $2, $1);
                         }
                     | expression TK_AND expression
                         {
-                            $$ = ast_exp_binary(OP_AND, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_AND, $1, $3, $2);
                         }
                     | expression TK_OR expression
                         {
-                            $$ = ast_exp_binary(OP_OR, $1, $3, $2);
+                            $$ = AstExpressionBinary(AST_OPERATOR_OR, $1, $3, $2);
                         }
                     ;
 
 call                : TK_ID '(' ')'
                         {
-                            $$ = ast_exp_call($1.str, NULL, $1.line);
+                            $$ = AstExpressionCall($1.str, NULL, $1.line);
                         }
                     | TK_ID '(' expression_list ')'
                         {
-                            $$ = ast_exp_call($1.str, $3, $1.line);
+                            $$ = AstExpressionCall($1.str, $3, $1.line);
                         }
                     ;
 
@@ -399,13 +388,13 @@ expression_list     : expression_list ',' expression
 
 %%
 
-void yyerror(char* s)
+void yyerror(const char* s)
 {
-    char* token = scanner_token();
-    int line = scanner_line();
+    char* token = ScannerGetCurrentToken();
+    int line = ScannerGetCurrentLine();
     if (*token == '\0')
-        errorl(line, "%s, unexpected end of file", s);
+        ErrorL(line, "%s, unexpected end of file", s);
     else
-        errorl(line, "%s, unexpected token '%s'", s, token);
+        ErrorL(line, "%s, unexpected token '%s'", s, token);
 }
 

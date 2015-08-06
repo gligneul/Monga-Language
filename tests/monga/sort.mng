@@ -1,0 +1,71 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+#define ARRAY_SIZE 20
+
+void bubbleSort(int[] array, int size) {
+    while (size > 1) {
+        int i;
+        i = 0;
+        while (i < size - 1) {
+            if (array[i] > array[i + 1]) {
+                int temp;
+                temp = array[i];
+                array[i] = array[i + 1];
+                array[i + 1] = temp;
+            }
+            i = i + 1;
+        }
+        size = size - 1;
+    }
+}
+
+void printArray(int[] array, int size) {
+    int i;
+    i = 0;
+    while (i < size) {
+        print array[i], " ";
+        i = i + 1;
+    }
+    print "\n";
+}
+
+void fillArray(int[] array) {
+    array[0] = 54.0;
+    array[1] = 40.0;
+    array[2] = 38.0;
+    array[3] = 93.0;
+    array[4] = 16.0;
+    array[5] = 19.0;
+    array[6] = 54.0;
+    array[7] = 25.0;
+    array[8] = 35.0;
+    array[9] = 32.0;
+    array[10] = 16.0;
+    array[11] = 6.0;
+    array[12] = 50.0;
+    array[13] = 94.0;
+    array[14] = 57.0;
+    array[15] = 74.0;
+    array[16] = 2.0;
+    array[17] = 10.0;
+    array[18] = 23.0;
+    array[19] = 11.0;
+}
+
+int main() {
+    int[] array;
+    array = new int[ARRAY_SIZE];
+    fillArray(array);
+    print "Array:\n";
+    printArray(array, ARRAY_SIZE);
+    bubbleSort(array, ARRAY_SIZE);
+    print "Sorted:\n";
+    printArray(array, ARRAY_SIZE);
+    delete array;
+    return 0;
+}
+

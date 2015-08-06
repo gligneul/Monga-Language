@@ -1,10 +1,9 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * ast.h
- * Data type responsable for the AST representation.
+ * Data type responsable for the AST representation
  */
 
 #ifndef AST_H
@@ -12,306 +11,319 @@
 
 #include "type.h"
 
-/* Concatenates two nodes
- * Both nodes must be the first element of the lists and must point to the last
- * element of the lists
+/* Concatenates two list
  * Returns the first element of the concatenated list
- * This elements points to the last elemtement */
+ * This elements will point to the last element */
 #define AST_CONCAT(left, right) \
     (!left ? right : \
      (left->last->next = right, \
       left->last = right->last, \
       left))
 
+/* Iterates over a list */
+#define AST_FOREACH(type, iterator, init) \
+    for (type* iterator = init; iterator != NULL; iterator = iterator->next)
+
 /* Data type definitions */
-typedef struct ast_decl_t ast_decl_t;
-typedef struct ast_cmd_t ast_cmd_t;
-typedef struct ast_exp_t ast_exp_t;
-typedef struct ast_var_t ast_var_t;
+typedef struct AstDeclaration AstDeclaration;
+typedef struct AstStatement AstStatement;
+typedef struct AstExpression AstExpression;
+typedef struct AstVariable AstVariable;
 
-/* Declaration tags */
-typedef enum {
-    DECL_VARIABLE,
-    DECL_FUNCTION,
-    DECL_PROTOTYPE
-} ast_decl_tag;
+/* AstDeclaration */
+struct AstDeclaration {
 
-/* Declaration data type */
-struct ast_decl_t {
-    ast_decl_tag tag;
-    type_t type;
+    /* Types of declarations (tags) */
+    enum {
+        AST_DECLARATION_VARIABLE,
+        AST_DECLARATION_FUNCTION,
+    } tag;
+
+    /* Type of this declaration */
+    Type type;
+
+    /* Identifier of variable or function */
     char* identifier;
+
+    /* Line in source file */
     int line;
-    ast_decl_t* next;
-    ast_decl_t* last;
+
+    /* List representation */
+    AstDeclaration* next;
+    AstDeclaration* last;
+
+    /* Specific fields for each tag */
     union {
-        /* DECL_VARIABLE */
+        /* AST_DECLARATION_VARIABLE */
         struct {
             bool global;
             int offset;
         } variable_;
 
-        /* DECL_FUNCTION */
+        /* AST_DECLARATION_FUNCTION */
         struct {
-            ast_decl_t* parameters;
-            ast_cmd_t* block;
+            AstDeclaration* parameters;
+            int n_parameters;
+            AstStatement* block;
             int space;
         } function_;
-
-        /* DECL_PROTOTYPE */
-        struct {
-            ast_decl_t* parameters;
-        } prototype_;
     } u;
 };
 
-/* Command tags */
-typedef enum {
-    CMD_BLOCK,
-    CMD_IF,
-    CMD_WHILE,
-    CMD_ASSIGN,
-    CMD_DELETE,
-    CMD_RETURN,
-    CMD_CALL
-} ast_cmd_tag;
+/* AstStatement */
+struct AstStatement {
 
-/* Command data type */
-struct ast_cmd_t {
-    ast_cmd_tag tag;
+    /* Types of statements (tags) */
+    enum {
+        AST_STATEMENT_BLOCK,
+        AST_STATEMENT_IF,
+        AST_STATEMENT_WHILE,
+        AST_STATEMENT_ASSIGN,
+        AST_STATEMENT_DELETE,
+        AST_STATEMENT_PRINT,
+        AST_STATEMENT_RETURN,
+        AST_STATEMENT_CALL
+    } tag;
+
+    /* Line in source file */
     int line;
-    ast_cmd_t* next;
-    ast_cmd_t* last;
+
+    /* True if this statement or it's substatements have returned */
+    bool returned;
+
+    /* List representation */
+    AstStatement* next;
+    AstStatement* last;
+
+    /* Specific fields for each tag */
     union {
-        /* CMD_BLOCK */
+        /* AST_STATEMENT_BLOCK */
         struct {
-            ast_decl_t* variables;
-            ast_cmd_t* commands;
+            AstDeclaration* variables;
+            AstStatement* statements;
         } block_;
 
-        /* CMD_IF */
+        /* AST_STATEMENT_IF */
         struct {
-            ast_exp_t* expression;
-            ast_cmd_t* command_if;
-            ast_cmd_t* command_else;
+            AstExpression* expression;
+            AstStatement* then_statement;
+            AstStatement* else_statement;
         } if_;
 
-        /* CMD_WHILE */
+        /* AST_STATEMENT_WHILE */
         struct {
-            ast_exp_t* expression;
-            ast_cmd_t* command;
+            AstExpression* expression;
+            AstStatement* statement;
         } while_;
 
-        /* CMD_ASSIGN */
+        /* AST_STATEMENT_ASSIGN */
         struct {
-            ast_var_t* variable;
-            ast_exp_t* expression;
+            AstVariable* variable;
+            AstExpression* expression;
         } assign_;
 
-        /* CMD_DELETE */
+        /* AST_STATEMENT_DELETE */
         struct {
-            ast_exp_t* expression;
+            AstExpression* expression;
         } delete_;
 
-        /* CMD_RETURN */
+        /* AST_STATEMENT_PRINT */
         struct {
-            ast_exp_t* expression;
+            AstExpression* expressions;
+        } print_;
+
+        /* AST_STATEMENT_RETURN */
+        struct {
+            AstExpression* expression;
         } return_;
 
-        /* CMD_CALL */
-        ast_exp_t* call_;
+        /* AST_STATEMENT_CALL */
+        AstExpression* call_;
     } u;
 };
-
-/* Expression tags */
-typedef enum {
-    EXP_KINT,
-    EXP_KFLOAT,
-    EXP_STRING,
-    EXP_NULL,
-    EXP_BOOL,
-    EXP_CALL_ID,
-    EXP_CALL_DECL,
-    EXP_VARIABLE,
-    EXP_NEW,
-    EXP_UNARY,
-    EXP_BINARY,
-    EXP_CAST
-} ast_exp_tag;
 
 /* Unary expression operators */
 typedef enum {
-    OP_NEGATE,
-    OP_NOT
-} ast_unop;
+    AST_OPERATOR_NEGATE,
+    AST_OPERATOR_NOT
+} AstUnaryOperator;
 
 /* Binary expression operators */
 typedef enum {
-    OP_ADD,
-    OP_SUB,
-    OP_MUL,
-    OP_DIV,
-    OP_EQUALS,
-    OP_NOT_EQUALS,
-    OP_LESS,
-    OP_LESS_EQUALS,
-    OP_GREATER,
-    OP_GREATER_EQUALS,
-    OP_AND,
-    OP_OR
-} ast_binop;
+    AST_OPERATOR_ADD,
+    AST_OPERATOR_SUB,
+    AST_OPERATOR_MUL,
+    AST_OPERATOR_DIV,
+    AST_OPERATOR_EQUALS,
+    AST_OPERATOR_NOT_EQUALS,
+    AST_OPERATOR_LESS,
+    AST_OPERATOR_LESS_EQUALS,
+    AST_OPERATOR_GREATER,
+    AST_OPERATOR_GREATER_EQUALS,
+    AST_OPERATOR_AND,
+    AST_OPERATOR_OR
+} AstBinaryOperator;
 
 /* Cast tags */
 typedef enum {
-    CAST_INT_TO_FLOAT,
-    CAST_FLOAT_TO_INT,
-} ast_cast_tag;
+    AST_CAST_INT_TO_FLOAT,
+    AST_CAST_FLOAT_TO_INT
+} AstCastTag;
 
-/* Expression data type */
-struct ast_exp_t {
-    ast_exp_tag tag;
+/* AstExpression */
+struct AstExpression {
+
+    /* Types of expressions (tags) */
+    enum {
+        AST_EXPRESSION_KBOOL,
+        AST_EXPRESSION_KINT,
+        AST_EXPRESSION_KFLOAT,
+        AST_EXPRESSION_STRING,
+        AST_EXPRESSION_NULL,
+        AST_EXPRESSION_CALL,
+        AST_EXPRESSION_VARIABLE,
+        AST_EXPRESSION_NEW,
+        AST_EXPRESSION_UNARY,
+        AST_EXPRESSION_BINARY,
+        AST_EXPRESSION_CAST
+    } tag;
+
+    /* Type of this expression */
+    Type type;
+
+    /* Line in source file */
     int line;
-    type_t type;
-    ast_exp_t* next;
-    ast_exp_t* last;
+
+    /* List representation */
+    AstExpression* next;
+    AstExpression* last;
+
+    /* Specific fields for each tag */
     union {
-        /* EXP_KINT */
+        /* AST_EXPRESSION_KBOOL */
+        bool kbool_;
+
+        /* AST_EXPRESSION_KINT */
         int kint_;
 
-        /* EXP_KFLOAT */
+        /* AST_EXPRESSION_KFLOAT */
         float kfloat_;
 
-        /* EXP_STRING */
+        /* AST_EXPRESSION_STRING */
         char* string_;
 
-        /* EXP_BOOL */
-        int bool_;
-
-        /* EXP_CALL_ID */
+        /* AST_EXPRESSION_CALL */
         struct {
-            char* identifier;
-            ast_exp_t* expressions;
-        } call_id_;
+            bool is_declaration;
+            union {
+                char* identifier_;
+                AstDeclaration* declaration_;
+            } u;
+            AstExpression* expressions;
+        } call_;
 
-        /* EXP_CALL_DECL */
+        /* AST_EXPRESSION_VARIABLE */
+        AstVariable* variable_;
+
+        /* AST_EXPRESSION_NEW */
         struct {
-            ast_decl_t* declaration;
-            ast_exp_t* expressions;
-        } call_decl_;
-
-        /* EXP_VARIABLE */
-        ast_var_t* variable_;
-
-        /* EXP_NEW */
-        struct {
-            type_t type;
-            ast_exp_t* expression;
+            Type type;
+            AstExpression* expression;
         } new_;
 
-        /* EXP_UNARY */
+        /* AST_EXPRESSION_UNARY */
         struct {
-            ast_unop operator;
-            ast_exp_t* expression;
+            AstUnaryOperator operator;
+            AstExpression* expression;
         } unary_;
 
-        /* EXP_BINARY */
+        /* AST_EXPRESSION_BINARY */
         struct {
-            ast_binop operator;
-            ast_exp_t* expression_left;
-            ast_exp_t* expression_right;
+            AstBinaryOperator operator;
+            AstExpression* expression_left;
+            AstExpression* expression_right;
         } binary_;
 
-        /* EXP_CAST */
+        /* AST_EXPRESSION_CAST */
         struct {
-            ast_cast_tag tag;
-            ast_exp_t* expression;
+            AstCastTag tag;
+            AstExpression* expression;
         } cast_;
     } u;
 };
 
-/* Variable tags */
-typedef enum {
-    VAR_IDENTIFIER,
-    VAR_DECLARATION,
-    VAR_ARRAY
-} ast_var_tag;
+/* AstVariable */
+struct AstVariable {
 
-/* Variable data type */
-struct ast_var_t {
-    ast_var_tag tag;
+    /* Types of variables (tags) */
+    enum {
+        AST_VARIABLE_REFERENCE,
+        AST_VARIABLE_ARRAY
+    } tag;
+
+    /* Type of this declaration */
+    Type type;
+
+    /* Line in source file */
     int line;
-    type_t type;
+
+    /* Specific fields for each tag */
     union {
-        /* VAR_IDENTIFIER */
-        char* identifier_;
-
-        /* VAR_DECLARATION */
-        ast_decl_t* declaration_;
-
-        /* VAR_ARRAY */
+        /* AST_VARIABLE_REFERENCE */
         struct {
-            ast_exp_t* location;
-            ast_exp_t* offset;
+            bool is_declaration;
+            union {
+                char* identifier_;
+                AstDeclaration* declaration_;
+            } u;
+        } reference_;
+
+        /* AST_VARIABLE_ARRAY */
+        struct {
+            AstExpression* location;
+            AstExpression* offset;
         } array_;
     } u;
 };
 
 /* Functions for creating the nodes */
-ast_decl_t* ast_decl_variable(type_t type, char* identifier, int line);
+AstDeclaration* AstDeclarationVariable(Type type, char* identifier, int line);
+AstDeclaration* AstDeclarationFunction(Type type, char* identifier, int line,
+        AstDeclaration* parameters, AstStatement* block);
 
-ast_decl_t* ast_decl_function(type_t type, char* identifier, int line,
-        ast_decl_t* parameters, ast_cmd_t* block);
+AstStatement* AstStatementBlock(AstDeclaration* variables,
+        AstStatement* statements, int line);
+AstStatement* AstStatementIf(AstExpression* expression,
+        AstStatement* then_statement, AstStatement* else_statement, int line);
+AstStatement* AstStatementWhile(AstExpression* expression,
+        AstStatement* statement, int line);
+AstStatement* AstStatementAssign(AstVariable* variable,
+        AstExpression* expression, int line);
+AstStatement* AstStatementDelete(AstExpression* expression, int line);
+AstStatement* AstStatementPrint(AstExpression* expressions, int line);
+AstStatement* AstStatementReturn(AstExpression* expression, int line);
+AstStatement* AstStatementCall(AstExpression* call, int line);
 
-ast_decl_t* ast_decl_prototype(type_t type, char* identifier, int line,
-        ast_decl_t* parameters);
-
-ast_cmd_t* ast_cmd_block(ast_decl_t* variables, ast_cmd_t* commands,
+AstExpression* AstExpressionKBool(bool value);
+AstExpression* AstExpressionKInt(int value);
+AstExpression* AstExpressionKFloat(float value);
+AstExpression* AstExpressionString(char* string);
+AstExpression* AstExpressionNull();
+AstExpression* AstExpressionCall(char* identifier, AstExpression* expressions,
         int line);
-
-ast_cmd_t* ast_cmd_if(ast_exp_t* expression, ast_cmd_t* command_if,
-        ast_cmd_t* command_else, int line);
-
-ast_cmd_t* ast_cmd_while(ast_exp_t* expression, ast_cmd_t* command,
+AstExpression* AstExpressionVariable(AstVariable* variable, int line);
+AstExpression* AstExpressionNew(Type type, AstExpression* expression, int line);
+AstExpression* AstExpressionUnary(AstUnaryOperator operator, 
+        AstExpression* expression, int line);
+AstExpression* AstExpressionBinary(AstBinaryOperator operator, 
+        AstExpression* expression_left, AstExpression* expression_right,
         int line);
+void AstExpressionCast(AstExpression* expression, Type goal_type,
+        AstCastTag cast_tag);
 
-ast_cmd_t* ast_cmd_assign(ast_var_t* variable, ast_exp_t* expression,
+AstVariable* AstVariableReference(char* identifier, int line);
+AstVariable* AstVariableArray(AstExpression* location, AstExpression* offset,
         int line);
-
-ast_cmd_t* ast_cmd_delete(ast_exp_t* expression, int line);
-
-ast_cmd_t* ast_cmd_return(ast_exp_t* expression, int line);
-
-ast_cmd_t* ast_cmd_call(ast_exp_t* call, int line);
-
-ast_exp_t* ast_exp_kint(int value);
-
-ast_exp_t* ast_exp_kfloat(float value);
-
-ast_exp_t* ast_exp_string(char* string);
-
-ast_exp_t* ast_exp_null();
-
-ast_exp_t* ast_exp_bool(int value);
-
-ast_exp_t* ast_exp_call(char* identifier, ast_exp_t* expressions,
-        int line);
-
-ast_exp_t* ast_exp_variable(ast_var_t* variable, int line);
-
-ast_exp_t* ast_exp_new(type_t type, ast_exp_t* expression, int line);
-
-ast_exp_t* ast_exp_unary(ast_unop operator, ast_exp_t* expression,
-        int line);
-
-ast_exp_t* ast_exp_binary(ast_binop operator, 
-        ast_exp_t* expression_left, ast_exp_t* expression_right, int line);
-
-void ast_exp_cast(ast_exp_t* expression, type_t goal_type,
-        ast_cast_tag cast_tag);
-
-ast_var_t* ast_var_identifier(char* identifier, int line);
-
-ast_var_t* ast_var_array(ast_exp_t* location, ast_exp_t* offset, int line);
 
 #endif
 

@@ -1,0 +1,86 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+#define TEST(expression) \
+    print #expression, "\n"; \
+    if (expression) { \
+        print "            passed\n"; \
+    } else { \
+        print "            failed\n"; \
+    }
+
+/* Returns true if both strings are equal */
+bool stringCmp(char[] left, char[] right) {
+    int i;
+
+    i = 0;
+    while (left[i] != 0 && right[i] != 0) {
+        if (left[i] != right[i])
+            return false;
+        i = i + 1;
+    }
+    return left[i] == 0 && right[i] == 0;
+}
+
+/* Calculates the length of a string */
+int stringLen(char[] s) {
+    int len;
+
+    len = 0;
+    while (s[len] != 0)
+        len = len + 1;
+    return len;
+}
+
+/* Creates a copy of a string */
+char[] stringDup(char[] s) {
+    char[] copy;
+    int i;
+
+    copy = new char[stringLen(s) + 1];
+    i = 0;
+    while (s[i] != 0) {
+        copy[i] = s[i];
+        i = i + 1;
+    }
+    copy[i] = 0;
+    return copy;
+}
+
+int main() {
+    char[][] strings;
+
+    strings = new char[][3];
+    strings[0] = "Hello";
+    strings[1] = stringDup(strings[0]);
+    strings[1][0] = 'h';
+    strings[2] = new char[6];
+    strings[2][0] = 'H';
+    strings[2][1] = 'e';
+    strings[2][2] = 'l';
+    strings[2][3] = 'l';
+    strings[2][4] = 'o';
+    strings[2][5] = 0;
+
+    print "Strings:\n";
+    print strings[0], "\n";
+    print strings[1], "\n";
+    print strings[2], "\n";
+
+    print "Tests:\n";
+    TEST(strings[0] != strings[1])
+    TEST(strings[0] != strings[2])
+    TEST(strings[1] != strings[2])
+    TEST(!stringCmp(strings[0], strings[1]))
+    TEST(stringCmp(strings[0], strings[2]))
+    TEST(!stringCmp(strings[1], strings[2]))
+    TEST(stringLen(strings[0]) == 5)
+
+    delete strings[1];
+    delete strings[2];
+    delete strings;
+    return 0;
+}

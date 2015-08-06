@@ -1,0 +1,53 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int foo1() {
+    return 0;
+}
+
+int foo2(bool cond) {
+    int a;
+    a = 5;
+    if (cond)
+        return 1;
+    return a;
+}
+
+int foo3(bool cond) {
+    int a;
+    a = 5;
+    if (cond)
+        return 1;
+    else
+        return 0;
+}
+
+int foo4(bool cond1, bool cond2) {
+    int a, b;
+    if (cond1) {
+        if (cond2) {
+            return 0;
+        } else {
+            a = 10;
+            return a;
+        }
+    } else {
+        return b;
+    }
+}
+
+int foo5() {
+    while (true)
+        return 0;
+}
+
+int foo6(bool cond) {
+    int a, b;
+    while (true)
+        if (cond)
+            return a;
+    return b;
+}
+

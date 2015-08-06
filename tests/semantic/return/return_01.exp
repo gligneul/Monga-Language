@@ -1,0 +1,54 @@
+
+(func int foo1<6>
+  (block
+    (return 0:int)))
+
+(func int foo2<10>
+  (var bool cond<10>)
+  (block
+    (var int a<11>)
+    (assign a<11> 5:int)
+    (if cond<10>:bool
+        (return 1:int))
+    (return a<11>:int)))
+
+(func int foo3<18>
+  (var bool cond<18>)
+  (block
+    (var int a<19>)
+    (assign a<19> 5:int)
+    (if cond<18>:bool
+        (return 1:int)
+        (return 0:int))))
+
+(func int foo4<27>
+  (var bool cond1<27>)
+  (var bool cond2<27>)
+  (block
+    (var int a<28>)
+    (var int b<28>)
+    (if cond1<27>:bool
+        (block
+          (if cond2<27>:bool
+              (block
+                (return 0:int))
+              (block
+                (assign a<28> 10:int)
+                (return a<28>:int))))
+        (block
+          (return b<28>:int)))))
+
+(func int foo5<41>
+  (block
+    (while true:bool
+      (return 0:int))))
+
+(func int foo6<46>
+  (var bool cond<46>)
+  (block
+    (var int a<47>)
+    (var int b<47>)
+    (while true:bool
+      (if cond<46>:bool
+          (return a<47>:int)))
+    (return b<47>:int)))

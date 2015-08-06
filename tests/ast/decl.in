@@ -1,7 +1,7 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
  *
  * decl.in
  */
@@ -12,14 +12,17 @@ bool[] flags;
 
 bool is_true;
 
-void foo();
+void foo() {}
 
 float a, b, c;
 
 int[] bar(int a) {
-    return 0;
+    return null;
 }
 
 char[][][][][][] six_dimensions;
 
-float abc(int a, float b, char c);
+float abc(int a, float b, char c) {
+    return a + b + c;
+}
+

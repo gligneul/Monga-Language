@@ -8,6 +8,3 @@ obj/*
 
 # examples
 examples/*.mng.*
-
-# Lib binaries
-lib/obj/*

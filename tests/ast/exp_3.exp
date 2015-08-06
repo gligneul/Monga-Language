@@ -1,22 +1,28 @@
 
-(proto char[] foo<9>
-  (var int x<9>))
-
-(proto float bar<10>
-  (var int y<10>)
-  (var int z<10>))
-
-(proto int boo<11>
-  (var char w<11>))
-
-(func int main<13>
+(func char[] foo<9>
+  (var int x<9>)
   (block
-    (var int a<14>)
-    (var int b<14>)
-    (var int c<14>)
-    (var int d<14>)
-    (var int e<14>)
-    (var char[] s<15>)
+    (return (new char[x]))))
+
+(func float bar<13>
+  (var int y<13>)
+  (var int z<13>)
+  (block
+    (return (+ y z))))
+
+(func int boo<17>
+  (var char w<17>)
+  (block
+    (return w)))
+
+(func int main<21>
+  (block
+    (var int a<22>)
+    (var int b<22>)
+    (var int c<22>)
+    (var int d<22>)
+    (var int e<22>)
+    (var char[] s<23>)
     (assign s (foo (bar a (boo b))))
     (assign s (new char[(bar a b)]))
     (assign s[(foo (bar a b))] c)

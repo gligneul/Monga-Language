@@ -1,7 +1,7 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
  *
  * accept_decl.in
  */
@@ -20,9 +20,8 @@ float[][] matrix;
 
 int[][][][][][] six_dimensions;
 
-void foo_a();
+void foo_a() {}
 
-int foo_b(int x);
+int foo_b(int x) {}
 
-char[][] foo_c(int x, char b);
-
+char[][] foo_c(int x, char b) {}

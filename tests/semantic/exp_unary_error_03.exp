@@ -1,1 +1,0 @@
-mc: error at line 9, mismatch type in '-' unary operation, expected 'int' or 'float', read 'bool'

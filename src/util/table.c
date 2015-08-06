@@ -1,60 +1,61 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * table.c
  */
 
+#include <string.h>
 #include <stdlib.h>
 
 #include "table.h"
 
-struct node {
+typedef struct Node {
     void* key;
     void* data;
-    struct node* father;
-    struct node* left;
-    struct node* right;
+    struct Node* father;
+    struct Node* left;
+    struct Node* right;
     int color;
-};
+} Node;
 
-struct table {
-    table_destroy_f destroykey;
-    table_destroy_f destroydata;
-    table_copy_f copykey;
-    table_copy_f copydata;
-    table_less_f less;
-    struct node* root;
+typedef struct Table {
+    TableDestroyFunction destroykey;
+    TableDestroyFunction destroydata;
+    TableCopyFunction copykey;
+    TableCopyFunction copydata;
+    TableLessFunction less;
+    Node* root;
     int size;
-};
+} Table;
 
 static const int BLACK = 0;
 static const int RED = 1;
 
-static struct node* node_create(table_t table, void* key, void* data,
-        struct node* father, int color);
-static void node_destroy(struct node* node, table_t table);
-static void node_swap(struct node* a, struct node* b);
-static struct node* node_grandfather(struct node* node);
-static struct node* node_uncle(struct node* node);
-static struct node* node_brother(struct node* node, struct node* father);
-static void node_rotate_left(struct node* father, table_t table);
-static void node_rotate_right(struct node* father, table_t table);
-static struct node* node_insert(struct node* node, table_t table, void* key,
+static Node* nodeCreate(TableRef table, void* key, void* data,
+        Node* father, int color);
+static void nodeDestroy(Node* node, TableRef table);
+static void nodeSwap(Node* a, Node* b);
+static Node* nodeGrandfather(Node* node);
+static Node* nodeUncle(Node* node);
+static Node* nodeBrother(Node* node, Node* father);
+static void nodeRotateLeft(Node* father, TableRef table);
+static void nodeRotateRight(Node* father, TableRef table);
+static Node* nodeInsert(Node* node, TableRef table, void* key,
         void* data);
-static void node_insert_rebalance(struct node* node, table_t table);
-static void node_erase(struct node* node, table_t table);
-static void node_erase_rebalance(struct node* node, struct node* father,
-         table_t table);
-static struct node* node_find(struct node* node, table_t table, void* key);
-static void node_toarray(struct node* node, struct table_pair* pairs,
+static void nodeInsertRebalance(Node* node, TableRef table);
+static void nodeErase(Node* node, TableRef table);
+static void nodeEraseRebalance(Node* node, Node* father,
+         TableRef table);
+static Node* nodeFind(Node* node, TableRef table, void* key);
+static void nodeToArray(Node* node, TablePair* pairs,
         int* index);
 
-table_t table_create(table_destroy_f destroykey, table_destroy_f destroydata,
-        table_copy_f copykey, table_copy_f copydata, table_less_f less)
+TableRef TableCreate(TableDestroyFunction destroykey,
+        TableDestroyFunction destroydata, TableCopyFunction copykey,
+        TableCopyFunction copydata, TableLessFunction less)
 {
-    table_t table = (table_t)malloc(sizeof(struct table));
+    TableRef table = (TableRef)malloc(sizeof(Table));
     table->destroykey = destroykey;
     table->destroydata = destroydata;
     table->copykey = copykey;
@@ -65,40 +66,40 @@ table_t table_create(table_destroy_f destroykey, table_destroy_f destroydata,
     return table;
 }
 
-void table_destroy(table_t table)
+void TableDestroy(TableRef table)
 {
-    node_destroy(table->root, table);
+    nodeDestroy(table->root, table);
     free(table);
 }
 
-struct table_pair table_insert(table_t table, void* key, void* data)
+TablePair TableInsert(TableRef table, void* key, void* data)
 {
-    struct node* node = NULL;
-    struct table_pair pair = {NULL, NULL};
+    Node* node = NULL;
+    TablePair pair = {NULL, NULL};
     if (!table->root) {
-        node = table->root = node_create(table, key, data, NULL, BLACK);
+        node = table->root = nodeCreate(table, key, data, NULL, BLACK);
         table->size += 1;
     } else {
-        node = node_insert(table->root, table, key, data);
+        node = nodeInsert(table->root, table, key, data);
     }
     pair.key = node->key;
     pair.data = node->data;
     return pair;
 }
 
-void table_erase(table_t table, void* key)
+void TableErase(TableRef table, void* key)
 {
-    struct node* node = node_find(table->root, table, key);
+    Node* node = nodeFind(table->root, table, key);
     if (node) {
-        node_erase(node, table);
+        nodeErase(node, table);
         table->size--;
     }
 }
 
-struct table_pair table_find(table_t table, void* key)
+TablePair TableFind(TableRef table, void* key)
 {
-    struct table_pair pair = {NULL, NULL};
-    struct node* node = node_find(table->root, table, key);
+    TablePair pair = {NULL, NULL};
+    Node* node = nodeFind(table->root, table, key);
     if (node) {
         pair.key = node->key;
         pair.data = node->data;
@@ -106,25 +107,55 @@ struct table_pair table_find(table_t table, void* key)
     return pair;
 }
 
-int table_size(table_t table)
+int TableSize(TableRef table)
 {
     return table->size;
 }
 
-struct table_pair* table_toarray(table_t table)
+TablePair* TableToArray(TableRef table)
 {
     int i = 0;
-    if (!table->size) return 0;
-    struct table_pair* pairs =
-        (struct table_pair*)malloc(sizeof(struct table_pair) * table->size);
-    node_toarray(table->root, pairs, &i);
+	TablePair* pairs;
+
+    if (!table->size)
+		return 0;
+    pairs = (TablePair*)malloc(sizeof(TablePair) * table->size);
+    nodeToArray(table->root, pairs, &i);
     return pairs;
 }
 
-static struct node* node_create(table_t table, void* key, void* data,
-        struct node* father, int color)
+void TableDummyDestroy(void* p)
 {
-    struct node* node = (struct node*)malloc(sizeof(struct node));
+    (void)p;
+}
+
+void* TableDummyCopy(void* p)
+{
+    return p;
+}
+
+int TableDummyLess(void* a, void* b)
+{
+    return a < b;
+}
+
+void* TableStrCopy(void* p)
+{
+    size_t size = strlen((char*)p) + 1;
+    char* out = (char*)malloc(size);
+    strcpy(out, (char*)p);
+    return out;
+}
+
+int TableStrLess(void* a, void* b)
+{
+    return strcmp((char*)a, (char*)b) < 0;
+}
+
+static Node* nodeCreate(TableRef table, void* key, void* data,
+        Node* father, int color)
+{
+    Node* node = (Node*)malloc(sizeof(Node));
     node->key = table->copykey(key);
     node->data = table->copydata(data);
     node->father = father;
@@ -134,18 +165,18 @@ static struct node* node_create(table_t table, void* key, void* data,
     return node;
 }
 
-static void node_destroy(struct node* node, table_t table)
+static void nodeDestroy(Node* node, TableRef table)
 {
     if (node) {
-        node_destroy(node->left, table);
-        node_destroy(node->right, table);
+        nodeDestroy(node->left, table);
+        nodeDestroy(node->right, table);
         table->destroykey(node->key);
         table->destroydata(node->data);
         free(node);
     }
 }
 
-static void node_swap(struct node* a, struct node* b)
+static void nodeSwap(Node* a, Node* b)
 {
     void* akey = a->key;
     void* adata = a->data;
@@ -155,16 +186,16 @@ static void node_swap(struct node* a, struct node* b)
     b->data = adata;
 }
 
-static struct node* node_grandfather(struct node* node)
+static Node* nodeGrandfather(Node* node)
 {
     if (node && node->father)
         return node->father->father;
     return NULL;
 }
 
-static struct node* node_uncle(struct node* node)
+static Node* nodeUncle(Node* node)
 {
-    struct node* grandfather = node_grandfather(node);
+    Node* grandfather = nodeGrandfather(node);
     if (!grandfather)
         return NULL;
     if (node->father == grandfather->left)
@@ -172,16 +203,17 @@ static struct node* node_uncle(struct node* node)
     return grandfather->left;
 }
 
-static struct node* node_brother(struct node* node, struct node* father) 
+static Node* nodeBrother(Node* node, Node* father) 
 {
     if (father->left == node)
         return father->right;
     return father->left;
 }
 
-static void node_rotate_left(struct node* father, table_t table) {
-    struct node* grandfather = father->father;
-    struct node* node = father->right;
+static void nodeRotateLeft(Node* father, TableRef table)
+{
+    Node* grandfather = father->father;
+    Node* node = father->right;
     if (grandfather) {
         if (grandfather->left == father)
             grandfather->left = node;
@@ -199,10 +231,10 @@ static void node_rotate_left(struct node* father, table_t table) {
     father->father = node;
 }
 
-static void node_rotate_right(struct node* father, table_t table)
+static void nodeRotateRight(Node* father, TableRef table)
 {
-    struct node* grandfather = father->father;
-    struct node* node = father->left;
+    Node* grandfather = father->father;
+    Node* node = father->left;
     if (grandfather) {
         if (grandfather->left == father)
             grandfather->left = node;
@@ -220,11 +252,13 @@ static void node_rotate_right(struct node* father, table_t table)
     father->father = node;
 }
 
-static struct node* node_insert(struct node* root, table_t table, void* key,
+static Node* nodeInsert(Node* root, TableRef table, void* key,
         void* data)
 {
-    struct node* father = root;
-    struct node** insert_position = NULL;
+    Node* father = root;
+    Node** insert_position = NULL;
+	Node* node = NULL;
+
     while (!insert_position) {
         if (table->less(key, father->key)) {
             if (father->left) {
@@ -242,17 +276,17 @@ static struct node* node_insert(struct node* root, table_t table, void* key,
             return father;
         }
     }
-    struct node* node = node_create(table, key, data, father, RED);
+    node = nodeCreate(table, key, data, father, RED);
     *insert_position = node;
     table->size += 1;
-    node_insert_rebalance(node, table);
+    nodeInsertRebalance(node, table);
     return node;
 }
 
-static void node_insert_rebalance(struct node* node, table_t table)
+static void nodeInsertRebalance(Node* node, TableRef table)
 {
-    struct node* uncle = NULL;
-    struct node* grandfather = NULL;
+    Node* uncle = NULL;
+    Node* grandfather = NULL;
 begin:
     /* Case 1 */
     if (!node->father) {
@@ -265,8 +299,8 @@ begin:
         return;
 
     /* Case 3 */
-    uncle = node_uncle(node);
-    grandfather = node_grandfather(node);
+    uncle = nodeUncle(node);
+    grandfather = nodeGrandfather(node);
     if (uncle && uncle->color == RED) {
         node->father->color = BLACK;
         uncle->color = BLACK;
@@ -277,41 +311,43 @@ begin:
 
     /* Case 4 */
     if (node == node->father->right && node->father == grandfather->left) {
-        node_rotate_left(node->father, table);
+        nodeRotateLeft(node->father, table);
         node = node->left;
     } else if (node == node->father->left &&
             node->father == grandfather->right) {
-        node_rotate_right(node->father, table);
+        nodeRotateRight(node->father, table);
         node = node->right;
     }
 
     /* Case 5 */
-    grandfather = node_grandfather(node);
+    grandfather = nodeGrandfather(node);
     node->father->color = BLACK;
     grandfather->color = RED;
     if (node == node->father->left)
-        node_rotate_right(grandfather, table);
+        nodeRotateRight(grandfather, table);
     else
-        node_rotate_left(grandfather, table);
+        nodeRotateLeft(grandfather, table);
 }
 
-static void node_erase(struct node* node, table_t table)
+static void nodeErase(Node* node, TableRef table)
 {
     /* Swap the node with it predecessor */
-    struct node* removed = node;
-    struct node* child = node->right;
+    Node* removed = node;
+    Node* child = node->right;
+	Node* father = NULL;
+
     if (node->left) {
-        struct node* next = node->left;
+        Node* next = node->left;
         do {
             removed = next;
             child = next->left;
             next = removed->right;
         } while (next);
-        node_swap(removed, node);
+        nodeSwap(removed, node);
     }
 
     /* Swaps with child */
-    struct node* father = removed->father;
+    father = removed->father;
     if (father) {
         if (father->left == removed)
             father->left = child;
@@ -328,32 +364,32 @@ static void node_erase(struct node* node, table_t table)
         if (child && child->color == RED)
             child->color = BLACK;
         else
-            node_erase_rebalance(child, father, table);
+            nodeEraseRebalance(child, father, table);
     }
     table->destroykey(removed->key);
     table->destroydata(removed->data);
     free(removed);
 }
 
-static void node_erase_rebalance(struct node* node, struct node* father,
-         table_t table)
+static void nodeEraseRebalance(Node* node, Node* father,
+         TableRef table)
 {
-    struct node* brother;
+    Node* brother;
 begin:
     /* Case 1 */
     if (father == NULL)
         return;
 
     /* Case 2 */
-    brother = node_brother(node, father);
+    brother = nodeBrother(node, father);
     if (brother->color == RED) {
         father->color = RED;
         brother->color = BLACK;
         if (node == father->left)
-            node_rotate_left(father, table);
+            nodeRotateLeft(father, table);
         else
-            node_rotate_right(father, table);
-        brother = node_brother(node, father);
+            nodeRotateRight(father, table);
+        brother = nodeBrother(node, father);
     }
 
     /* Case 3 */
@@ -383,31 +419,31 @@ begin:
         brother->color = RED;
         if (brother->left)
             brother->left->color = BLACK;
-        node_rotate_right(brother, table);
+        nodeRotateRight(brother, table);
     } else if ((node == father->right) &&
                (!brother->left || brother->left->color == BLACK)) {
         brother->color = RED;
         if (brother->right)
             brother->right->color = BLACK;
-        node_rotate_left(brother, table);
+        nodeRotateLeft(brother, table);
     }
 
     /* Case 6 */
-    brother = node_brother(node, father);
+    brother = nodeBrother(node, father);
     brother->color = father->color;
     father->color = BLACK;
     if (node == father->left) {
         if (brother->right)
             brother->right->color = BLACK;
-        node_rotate_left(father, table);
+        nodeRotateLeft(father, table);
     } else {
         if (brother->left)
             brother->left->color = BLACK;
-        node_rotate_right(father, table);
+        nodeRotateRight(father, table);
     }
 }
 
-static struct node* node_find(struct node* node, table_t table, void* key)
+static Node* nodeFind(Node* node, TableRef table, void* key)
 {
     while (node) {
         if (table->less(key, node->key))
@@ -420,14 +456,14 @@ static struct node* node_find(struct node* node, table_t table, void* key)
     return node;
 }
 
-static void node_toarray(struct node* node, struct table_pair* pairs,
+static void nodeToArray(Node* node, TablePair* pairs,
         int* index)
 {
     if (!node) return;
-    node_toarray(node->left, pairs, index);
+    nodeToArray(node->left, pairs, index);
     pairs[*index].key = node->key;
     pairs[*index].data = node->data;
     (*index) += 1;
-    node_toarray(node->right, pairs, index);
+    nodeToArray(node->right, pairs, index);
 }
 

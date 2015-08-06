@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * table.h
  */
@@ -10,18 +9,18 @@
 #define TABLE_H
 
 /* Abstract data type for a table. */
-typedef struct table* table_t;
+typedef struct Table* TableRef;
 
 /* Function pointers. */
-typedef void(*table_destroy_f)(void*);
-typedef void*(*table_copy_f)(void*);
-typedef int(*table_less_f)(void*, void*);
+typedef void(*TableDestroyFunction)(void*);
+typedef void*(*TableCopyFunction)(void*);
+typedef int(*TableLessFunction)(void*, void*);
 
 /* Return type */
-struct table_pair {
+typedef struct TablePair {
     void* key;
     void* data;
-};
+} TablePair;
 
 /* Creates a new table.
  * destroykey Deallocation function for keys.
@@ -29,29 +28,45 @@ struct table_pair {
  * copykey Copy function for keys.
  * copydata Copy function for data.
  * less Compare function for keys. */
-table_t table_create(table_destroy_f destroykey, table_destroy_f destroydata,
-        table_copy_f copykey, table_copy_f copydata, table_less_f less);
+TableRef TableCreate(TableDestroyFunction destroykey,
+        TableDestroyFunction destroydata, TableCopyFunction copykey,
+        TableCopyFunction copydata, TableLessFunction less);
 
 /* Destroys the table. */
-void table_destroy(table_t table);
+void TableDestroy(TableRef table);
 
 /* Inserts an element to the table.
  * If there is already an entrance to this key, the element is not inserted and
  * the function returns the existing one. */
-struct table_pair table_insert(table_t table, void* key, void* data);
+TablePair TableInsert(TableRef table, void* key, void* data);
 
 /* Erases an element from the table. */
-void table_erase(table_t table, void* key);
+void TableErase(TableRef table, void* key);
 
 /* Finds an element in the table.
  * If the element is not found, returns a pair with null key. */
-struct table_pair table_find(table_t table, void* key);
+TablePair TableFind(TableRef table, void* key);
 
 /* Get the number of elements in the table */
-int table_size(table_t table);
+int TableSize(TableRef table);
 
 /* Creates an array with table contents */
-struct table_pair* table_toarray(table_t table);
+TablePair* TableToArray(TableRef table);
+
+/* Dummy deallocation function, do nothing */
+void TableDummyDestroy(void* p);
+
+/* Dummy copy function, returns the passed argument */
+void* TableDummyCopy(void* p);
+
+/* Dummy comparison function, returns a < b */
+int TableDummyLess(void* a, void* b);
+
+/* String copy function */
+void* TableStrCopy(void* p);
+
+/* String coparison function */
+int TableStrLess(void* a, void* b);
 
 #endif
 

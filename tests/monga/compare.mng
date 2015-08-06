@@ -1,0 +1,116 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+#define TEST(expression) \
+    print #expression, "\n"; \
+    if (expression) { \
+        print "            passed\n"; \
+    } else { \
+        print "            failed\n"; \
+    }
+
+void cmp_array() {
+    char[] array, array2, nullarray;
+
+    array = "ola";
+    array2 = "mundo";
+    nullarray = null;
+
+    print ">>>>> array\n";
+    TEST(nullarray == null)
+    TEST(!(null != nullarray))
+    TEST(array != array2)
+    TEST(array != null)
+    TEST(!(array == null))
+    print "------------------\n";
+}
+
+void cmp_bool() {
+    print ">>>>> bool\n";
+    TEST(true && true)
+    TEST(!(true && false))
+    TEST(!(false && true))
+    TEST(!(false && false))
+    TEST(true || true)
+    TEST(true || false)
+    TEST(false || true)
+    TEST(!(false || false))
+    print "------------------\n";
+}
+
+void cmp_int() {
+    print ">>>>> int\n";
+    TEST(3 == 3)
+    TEST(!(3 == 5))
+    TEST(!(3 != 3))
+    TEST(3 != 5)
+    TEST(!(3 < 3))
+    TEST(3 < 5)
+    TEST(!(5 < 3))
+    TEST(3 <= 3)
+    TEST(3 <= 5)
+    TEST(!(5 <= 3))
+    TEST(!(3 > 3))
+    TEST(!(3 > 5))
+    TEST(5 > 3)
+    TEST(3 >= 3)
+    TEST(!(3 >= 5))
+    TEST(5 >= 3)
+    print "------------------\n";
+}
+
+void cmp_neg_int() {
+    print ">>>>> -int\n";
+    TEST(-1 == -1)
+    TEST(!(-1 == 1))
+    TEST(!(1 <= -1))
+    TEST(-1 < 1)
+    TEST(1 > -1)
+    TEST(!(-1 >= 1))
+    print "------------------\n";
+}
+
+void cmp_float() {
+    print ">>>>> float\n";
+    TEST(3.0 == 3.0)
+    TEST(!(3.0 == 5.0))
+    TEST(!(3.0 != 3.0))
+    TEST(3.0 != 5.0)
+    TEST(!(3.0 < 3.0))
+    TEST(3.0 < 5.0)
+    TEST(!(5.0 < 3.0))
+    TEST(3.0 <= 3.0)
+    TEST(3.0 <= 5.0)
+    TEST(!(5.0 <= 3.0))
+    TEST(!(3.0 > 3.0))
+    TEST(!(3.0 > 5.0))
+    TEST(5.0 > 3.0)
+    TEST(3.0 >= 3.0)
+    TEST(!(3.0 >= 5.0))
+    TEST(5.0 >= 3.0)
+    print "------------------\n";
+}
+
+void cmp_neg_float() {
+    print ">>>>> -float\n";
+    TEST(-1.0 == -1.0)
+    TEST(!(-1.0 == 1.0))
+    TEST(!(1.0 <= -1.0))
+    TEST(-1.0 < 1.0)
+    TEST(1.0 > -1.0)
+    TEST(!(-1.0 >= 1.0))
+    print "------------------\n";
+}
+
+int main() {
+    cmp_array();
+    cmp_bool();
+    cmp_int();
+    cmp_neg_int();
+    cmp_float();
+    cmp_neg_float();
+    return 0;
+}

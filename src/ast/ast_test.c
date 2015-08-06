@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * ast_test.c
  */
@@ -13,7 +12,7 @@
 int main()
 {
     if (!yyparse())
-        ast_print(parser_ast);
+        AstPrintTree(parser_ast);
     return 0;
 }
 

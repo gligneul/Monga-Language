@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * symbols.c
  */
@@ -16,91 +15,68 @@
 
 typedef struct {
     char* identifier;
-    ast_decl_t* declaration;
-} symbol_t;
+    AstDeclaration* declaration;
+} Symbol;
 
-vector_t* symbols = NULL;
-vector_t* blocks = NULL;
+Vector* symbols = NULL;
+Vector* blocks = NULL;
 
 static void init();
-static int same_prototype(ast_decl_t* a, ast_decl_t* b);
 
-void symbols_add(char* identifier, ast_decl_t* declaration, int line)
+void SymbolsAdd(char* identifier, AstDeclaration* declaration, int line)
 {
     int current = 0;
     int last = 0;
-    symbol_t* new_symbol = NULL;
+    Symbol* new_symbol = NULL;
 
     if (!symbols)
         init();
 
     /* Verifies if this declaration shadows a symbol in the current block */
-    if (!vector_empty(blocks))
-        last = (int)(intptr_t)vector_peek(blocks);
-    for (current = vector_size(symbols) - 1; current >= last; current--) {
-        symbol_t* symbol = (symbol_t*)vector_get(symbols, current);
-        if (symbol->identifier == identifier) {
-            if (same_prototype(declaration, symbol->declaration))
-                return;
-            errorl(line, "symbol '%s' is already declared", identifier);
-        }
+    if (!VectorEmpty(blocks))
+        last = (int)(intptr_t)VectorPeek(blocks);
+    for (current = VectorSize(symbols) - 1; current >= last; current--) {
+        Symbol* symbol = (Symbol*)VectorGet(symbols, current);
+        if (symbol->identifier == identifier)
+            ErrorL(line, "symbol '%s' is already declared", identifier);
     }
 
     /* Inserts the the symbol */
-    new_symbol = NEW(symbol_t);
+    new_symbol = NEW(Symbol);
     new_symbol->identifier = identifier;
     new_symbol->declaration = declaration;
-    vector_push(symbols, new_symbol);
+    VectorPush(symbols, new_symbol);
 }
 
-ast_decl_t* symbols_find(char* identifier, int line)
+AstDeclaration* SymbolsFind(char* identifier, int line)
 {
-    int current = vector_size(symbols) - 1;
+    int current = VectorSize(symbols) - 1;
     for (; current >= 0; current--) {
-        symbol_t* symbol = (symbol_t*)vector_get(symbols, current);
+        Symbol* symbol = (Symbol*)VectorGet(symbols, current);
         if (symbol->identifier == identifier)
             return symbol->declaration;
     }
-    errorl(line, "symbol '%s' is not declared", identifier);
+    ErrorL(line, "symbol '%s' is not declared", identifier);
     return NULL;
 }
 
-void symbols_open_block()
+void SymbolsOpenBlock()
 {
-    int next_block = vector_size(symbols);
-    vector_push(blocks, (void*)(intptr_t)next_block);
+    int next_block = VectorSize(symbols);
+    VectorPush(blocks, (void*)(intptr_t)next_block);
 }
 
-void symbols_close_block()
+void SymbolsCloseBlock()
 {
     int current = 0;
-    int last = (int)(intptr_t)vector_pop(blocks);
-    for (current = vector_size(symbols) - 1; current >= last; current--)
-        vector_pop(symbols);
+    int last = (int)(intptr_t)VectorPop(blocks);
+    for (current = VectorSize(symbols) - 1; current >= last; current--)
+        VectorPop(symbols);
 }
 
 static void init()
 {
-    symbols = vector_create();
-    blocks = vector_create();
-}
-
-static int same_prototype(ast_decl_t* a, ast_decl_t* b)
-{
-    ast_decl_t* a_args = NULL;
-    ast_decl_t* b_args = NULL;
-
-    if (!(a->tag == DECL_PROTOTYPE &&
-          b->tag == DECL_PROTOTYPE &&
-          type_cmp(a->type, b->type)))
-        return 0;
-
-    a_args = a->u.prototype_.parameters;
-    b_args = b->u.prototype_.parameters;
-    while (a_args != NULL && b_args != NULL)
-        if (!type_cmp(a_args->type, b_args->type))
-            return 0;
-
-    return a_args == NULL && b_args == NULL;
+    symbols = VectorCreate();
+    blocks = VectorCreate();
 }
 

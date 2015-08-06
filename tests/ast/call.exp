@@ -1,12 +1,17 @@
 
-(proto void foo<9>)
+(func void foo<9>
+  (block))
 
-(proto char first<10>
-  (var char[] str<10>))
+(func char first<10>
+  (var char[] str<10>)
+  (block
+    (return str[0])))
 
-(proto float pow<11>
+(func float pow<11>
   (var float a<11>)
-  (var float b<11>))
+  (var float b<11>)
+  (block
+    (return (* a b))))
 
 (func int main<13>
   (block

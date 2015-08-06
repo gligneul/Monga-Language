@@ -1,11 +1,11 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * semantic.c
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -15,458 +15,518 @@
 #include "semantic/symbols.h"
 #include "util/error.h"
 
-static void analyse_decl(ast_decl_t* node);
-static void analyse_cmd(ast_cmd_t* node);
-static void analyse_cmd_block(ast_cmd_t* node, bool open_scope);
-static void analyse_cmd_if(ast_cmd_t* node);
-static void analyse_cmd_while(ast_cmd_t* node);
-static void analyse_cmd_assign(ast_cmd_t* node);
-static void analyse_cmd_delete(ast_cmd_t* node);
-static void analyse_cmd_return(ast_cmd_t* node);
-static void analyse_exp(ast_exp_t* node);
-static void analyse_exp_new(ast_exp_t* node);
-static void analyse_exp_call(ast_exp_t* node);
-static void analyse_exp_unary(ast_exp_t* node);
-static void analyse_exp_binary(ast_exp_t* node);
-static void analyse_var(ast_var_t* node);
-static bool is_bool(type_t type);
-static bool is_char(type_t type);
-static bool is_int(type_t type);
-static bool is_float(type_t type);
-static bool is_array(type_t type);
-static bool is_null(type_t type);
-static bool is_assignable(type_t variable, type_t expression);
-static bool is_void(type_t type);
-static void symbol_to_exp(ast_exp_t* node);
-static void exp_to_symbol(ast_exp_t* node, type_t variable);
+/* Adds declarations to the symbol table */
+static void addDeclarationsToSymbolsTable(AstDeclaration* declarations);
 
-static type_t return_type = { TYPE_UNDEFINED, 0 };
+/* Analyse a function declaration */
+static void analyseFunction(AstDeclaration* declaration);
 
-void semantic_analysis(ast_decl_t* ast)
+/* Analyse statements, check if all paths returned */
+static bool analyseStatement(AstStatement* statement);
+static bool analyseStatementBlock(AstStatement* statement);
+static bool analyseStatementIf(AstStatement* statement);
+static bool analyseStatementWhile(AstStatement* statement);
+static bool analyseStatementAssign(AstStatement* statement);
+static bool analyseStatementDelete(AstStatement* statement);
+static bool analyseStatementReturn(AstStatement* statement);
+
+/* Analyse expressions */
+static void analyseExpression(AstExpression* expression);
+static void analyseExpressionNew(AstExpression* expression);
+static void analyseExpressionCall(AstExpression* expression);
+static void analyseExpressionUnary(AstExpression* expression);
+static void analyseExpressionBinary(AstExpression* expression);
+
+/* Analyse specific binary expression, returns true if there is an error */
+static bool analyseExpressionArith(AstExpression* expression,
+        AstExpression* left, AstExpression* right);
+static bool analyseExpressionNumberCompare(AstExpression* expression,
+        AstExpression* left, AstExpression* right);
+static bool analyseExpressionCompare(AstExpression* expression,
+        AstExpression* left, AstExpression* right);
+static bool analyseExpressionLogical(AstExpression* expression,
+        AstExpression* left, AstExpression* right);
+
+/* Analyse a variable */
+static void analyseVariable(AstVariable* variable);
+
+/* Set the expression type if the expression is null and the type an array */
+static void setNullExpressionType(AstExpression* expression, Type type);
+
+/* Add cast for assignments, if necessary */
+static void insertAssignmentCast(AstExpression* expression, Type variable);
+
+/* Add cast for float/int binary expressions, if necessary */
+static void insertNumericalCast(AstExpression* left, AstExpression* right);
+
+/* Return type of current function */
+static Type return_type = {TYPE_UNDEFINED, 0};
+
+AstDeclaration* SemanticAnalyseTree(AstDeclaration* ast)
 {
-    analyse_decl(ast);
+    AST_FOREACH(AstDeclaration, declaration, ast) {
+        SymbolsAdd(declaration->identifier, declaration, declaration->line);
+        switch (declaration->tag) {
+        case AST_DECLARATION_FUNCTION:
+            analyseFunction(declaration);
+            break;
+        case AST_DECLARATION_VARIABLE:
+            declaration->u.variable_.global = true;
+            break;
+        }
+    }
+	return ast;
 }
 
-static void analyse_decl(ast_decl_t* node)
+static void addDeclarationsToSymbolsTable(AstDeclaration* declarations)
 {
-    if (!node) return;
+    AST_FOREACH(AstDeclaration, declaration, declarations) {
+        SymbolsAdd(declaration->identifier, declaration, declaration->line);
+    }
+}
 
-    symbols_add(node->identifier, node, node->line);
+static void analyseFunction(AstDeclaration* function)
+{
+    SymbolsOpenBlock();
+    addDeclarationsToSymbolsTable(function->u.function_.parameters);
+    return_type = function->type;
+    AstStatement* block = function->u.function_.block;
+    AstDeclaration* variables = block->u.block_.variables;
+    AstStatement* statements = block->u.block_.statements;
+    addDeclarationsToSymbolsTable(variables);
+    bool returned = analyseStatement(statements);
+    SymbolsCloseBlock();
 
-    switch (node->tag) {
-    case DECL_FUNCTION:
-        symbols_open_block();
-        analyse_decl(node->u.function_.parameters);
-        return_type = node->type;
-        analyse_cmd_block(node->u.function_.block, false);
-        return_type = type_create(TYPE_UNDEFINED, 0);
-        symbols_close_block();
+    if (!returned) {
+        if (TypeIsVoid(return_type)) {
+            AST_CONCAT(statements, AstStatementReturn(NULL, -1));
+        } else {
+            ErrorL(function->line, "there are branches of the function that "
+                    "don't return");
+        }
+    }
+}
+
+static bool analyseStatement(AstStatement* statement)
+{
+    if (statement == NULL)
+        return false;
+
+    switch (statement->tag) {
+    case AST_STATEMENT_BLOCK:
+        analyseStatementBlock(statement);
         break;
-    case DECL_PROTOTYPE:
-        symbols_open_block();
-        analyse_decl(node->u.prototype_.parameters);
-        symbols_close_block();
+    case AST_STATEMENT_IF:
+        analyseStatementIf(statement);
         break;
-    case DECL_VARIABLE:
+    case AST_STATEMENT_WHILE:
+        analyseStatementWhile(statement);
+        break;
+    case AST_STATEMENT_ASSIGN:
+        analyseStatementAssign(statement);
+        break;
+    case AST_STATEMENT_DELETE:
+        analyseStatementDelete(statement);
+        break;
+    case AST_STATEMENT_PRINT:
+        analyseExpression(statement->u.print_.expressions);
+        break;
+    case AST_STATEMENT_RETURN:
+        analyseStatementReturn(statement);
+        break;
+    case AST_STATEMENT_CALL:
+        analyseExpression(statement->u.call_);
         break;
     }
 
-    analyse_decl(node->next);
-}
-
-static void analyse_cmd(ast_cmd_t* node)
-{
-    if (!node) return;
-
-    switch (node->tag) {
-    case CMD_BLOCK:
-        analyse_cmd_block(node, true);
-        break;
-    case CMD_IF:
-        analyse_cmd_if(node);
-        break;
-    case CMD_WHILE:
-        analyse_cmd_while(node);
-        break;
-    case CMD_ASSIGN:
-        analyse_cmd_assign(node);
-        break;
-    case CMD_DELETE:
-        analyse_cmd_delete(node);
-        break;
-    case CMD_RETURN:
-        analyse_cmd_return(node);
-        break;
-    case CMD_CALL:
-        analyse_exp(node->u.call_);
-        break;
+    if (statement->returned) {
+        if (statement->next != NULL)
+            ErrorL(statement->next->line, "unexpected statement after return");
+        return true;
     }
 
-    analyse_cmd(node->next);
+    return analyseStatement(statement->next);
 }
 
-static void analyse_cmd_block(ast_cmd_t* node, bool open_scope)
+static bool analyseStatementBlock(AstStatement* statement)
 {
-    if (open_scope) symbols_open_block();
-    analyse_decl(node->u.block_.variables);
-    analyse_cmd(node->u.block_.commands);
-    if (open_scope) symbols_close_block();
+    SymbolsOpenBlock();
+    addDeclarationsToSymbolsTable(statement->u.block_.variables);
+    AstStatement* substatement = statement->u.block_.statements;
+    bool returned = analyseStatement(substatement);
+    SymbolsCloseBlock();
+
+    statement->returned = returned;
+    return returned;
 }
 
-static void analyse_cmd_if(ast_cmd_t* node)
+static bool analyseStatementIf(AstStatement* statement)
 {
-    ast_exp_t* expression = node->u.if_.expression;
-    analyse_exp(expression);
-    analyse_cmd(node->u.if_.command_if);
-    analyse_cmd(node->u.if_.command_else);
-    if (!is_bool(expression->type))
-        errorl(node->line, "mismatch type in if's expression, expected 'bool', "
-                "read '%s'", type_to_str(expression->type));
+    AstExpression* expression = statement->u.if_.expression;
+    analyseExpression(expression);
+
+    AstStatement* then_statement = statement->u.if_.then_statement;
+    bool then_returned = analyseStatement(then_statement);
+
+    AstStatement* else_statement = statement->u.if_.else_statement;
+    bool else_returned = analyseStatement(else_statement);
+
+    if (!TypeIsBool(expression->type)) {
+        ErrorL(statement->line, "mismatch type in if's expression, expected 'bool', "
+                "read '%s'", TypeToString(expression->type));
+    }
+
+    bool returned = then_returned && else_returned;
+    statement->returned = returned;
+    return returned;
 }
 
-static void analyse_cmd_while(ast_cmd_t* node)
+static bool analyseStatementWhile(AstStatement* statement)
 {
-    ast_exp_t* expression = node->u.while_.expression;
-    analyse_exp(expression);
-    analyse_cmd(node->u.while_.command);
-    if (!is_bool(expression->type))
-        errorl(node->line, "mismatch type in while's expression, expected "
-                "'bool', read '%s'", type_to_str(expression->type));
+    AstExpression* expression = statement->u.while_.expression;
+    analyseExpression(expression);
+
+    AstStatement* substatement = statement->u.while_.statement;
+    bool returned = analyseStatement(substatement);
+
+    if (!TypeIsBool(expression->type)) {
+        ErrorL(statement->line, "mismatch type in while's expression, expected "
+                "'bool', read '%s'", TypeToString(expression->type));
+    }
+
+    statement->returned = returned;
+    return returned;
 }
 
-static void analyse_cmd_assign(ast_cmd_t* node)
+static bool analyseStatementAssign(AstStatement* statement)
 {
-    ast_var_t* variable = node->u.assign_.variable;
-    ast_exp_t* expression = node->u.assign_.expression;
-    analyse_var(variable);
-    analyse_exp(expression);
-    if (is_assignable(variable->type, expression->type))
-        exp_to_symbol(expression, variable->type);
-    else
-        errorl(node->line, "mismatch type in '%s = %s' assignment",
-                type_to_str(variable->type), type_to_str(expression->type));
-}
+    AstVariable* variable = statement->u.assign_.variable;
+    analyseVariable(variable);
 
-static void analyse_cmd_delete(ast_cmd_t* node)
-{
-    ast_exp_t* expression = node->u.delete_.expression;
-    analyse_exp(expression);
-    if (!is_array(expression->type))
-        errorl(node->line, "mismatch type in delete's expression, expected an "
-                "array, read '%s'", type_to_str(expression->type));
-}
+    AstExpression* expression = statement->u.assign_.expression;
+    setNullExpressionType(expression, variable->type);
+    analyseExpression(expression);
 
-static void analyse_cmd_return(ast_cmd_t* node)
-{
-    const char* read_type = NULL;
-    ast_exp_t* expression = node->u.return_.expression;
-    analyse_exp(expression);
-    if (expression == NULL) {
-        if (!is_void(return_type))
-            read_type = "void";
+    if (TypeIsAssignable(variable->type, expression->type)) {
+        insertAssignmentCast(expression, variable->type);
     } else {
-        if (is_assignable(return_type, expression->type))
-            exp_to_symbol(expression, return_type);
+        ErrorL(statement->line, "mismatch type in '%s = %s' assignment",
+                TypeToString(variable->type), TypeToString(expression->type));
+    }
+
+    return false;
+}
+
+static bool analyseStatementDelete(AstStatement* statement)
+{
+    AstExpression* expression = statement->u.delete_.expression;
+    analyseExpression(expression);
+    if (!TypeIsArray(expression->type)) {
+        ErrorL(statement->line, "mismatch type in delete's expression, "
+                "expected an array, read '%s'", TypeToString(expression->type));
+    }
+    return false;
+}
+
+static bool analyseStatementReturn(AstStatement* statement)
+{
+    AstExpression* expression = statement->u.return_.expression;
+    analyseExpression(expression);
+
+    const char* wrong_type = NULL;
+    if (expression == NULL) {
+        if (!TypeIsVoid(return_type))
+            wrong_type = "void";
+    } else {
+        setNullExpressionType(expression, return_type);
+        if (TypeIsAssignable(return_type, expression->type))
+            insertAssignmentCast(expression, return_type);
         else
-            read_type = type_to_str(expression->type);
-    }
-    if (read_type != NULL)
-        errorl(node->line, "mismatch type in return's expression, expected "
-                "'%s', read '%s'", type_to_str(return_type), read_type);
-}
-
-static void analyse_exp(ast_exp_t* node)
-{
-    if (!node) return;
-
-    switch (node->tag) {
-    case EXP_KINT:
-        node->type = type_create(TYPE_INT, 0);
-        break;
-    case EXP_KFLOAT:
-        node->type = type_create(TYPE_FLOAT, 0);
-        break;
-    case EXP_STRING:
-        node->type = type_create(TYPE_CHAR, 1);
-        break;
-    case EXP_NULL:
-        node->type = type_create(TYPE_NULL, 0);
-        break;
-    case EXP_BOOL:
-        node->type = type_create(TYPE_BOOL, 0);
-        break;
-    case EXP_CALL_ID:
-        analyse_exp_call(node);
-        break;
-    case EXP_CALL_DECL:
-        error("unexpected EXP_CALL_DECL expression");
-        break;
-    case EXP_VARIABLE:
-        analyse_var(node->u.variable_);
-        node->type = node->u.variable_->type;
-        symbol_to_exp(node);
-        break;
-    case EXP_NEW:
-        analyse_exp_new(node);
-        break;
-    case EXP_UNARY:
-        analyse_exp_unary(node);
-        break;
-    case EXP_BINARY:
-        analyse_exp_binary(node);
-        break;
-    case EXP_CAST:
-        error("unexpected EXP_CAST expression");
-        break;
+            wrong_type = TypeToString(expression->type);
     }
 
-    analyse_exp(node->next);
-}
-
-static void analyse_exp_new(ast_exp_t* node)
-{
-    type_t array_type = node->u.new_.type;
-    ast_exp_t* expression = node->u.new_.expression;
-    analyse_exp(expression);
-    if (!is_int(expression->type))
-        errorl(node->line, "mismatch type in new expression, expected 'int', "
-                "read '%s'", type_to_str(expression->type));
-    node->type = type_create(array_type.tag, array_type.pointers + 1);
-}
-
-static void analyse_exp_call(ast_exp_t* node)
-{
-    char* id = node->u.call_id_.identifier;
-    ast_decl_t* decl = symbols_find(id, node->line);
-    ast_exp_t* exps = node->u.call_id_.expressions;
-    ast_decl_t* decl_args = NULL;
-    ast_exp_t* call_args = NULL;
-
-    if (decl->tag != DECL_FUNCTION && decl->tag != DECL_PROTOTYPE)
-        errorl(node->line, "cannot call non-function symbol '%s'", id);
-
-    analyse_exp(exps);
-
-    decl_args = decl->tag == DECL_FUNCTION ?
-                decl->u.function_.parameters :
-                decl->u.prototype_.parameters;
-    call_args = exps;
-    while (decl_args != NULL && call_args != NULL) {
-        if (!is_assignable(decl_args->type, call_args->type))
-            errorl(node->line, "mismatch type in parameter of '%s' function "
-                    "call, cannot assign '%s' to '%s'", id,
-                    type_to_str(call_args->type), type_to_str(decl_args->type));
-        exp_to_symbol(call_args, decl_args->type);
-        decl_args = decl_args->next;
-        call_args = call_args->next;
+    if (wrong_type != NULL) {
+        ErrorL(statement->line, "mismatch type in return's expression, expected "
+                "'%s', read '%s'", TypeToString(return_type), wrong_type);
     }
-    if (decl_args != NULL || call_args != NULL)
-        errorl(node->line, "mismatch number of parameters in '%s' function "
-                "call", id);
 
-    node->tag = EXP_CALL_DECL;
-    node->type = decl->type;
-    node->u.call_decl_.expressions = exps;
-    node->u.call_decl_.declaration = decl;
-    symbol_to_exp(node);
+    statement->returned = true;
+    return true;
 }
 
-static void analyse_exp_unary(ast_exp_t* node)
+static void analyseExpression(AstExpression* expression)
 {
+    if (!expression) return;
+
+    switch (expression->tag) {
+    case AST_EXPRESSION_KINT:
+        expression->type = TypeCreate(TYPE_INT, 0);
+        break;
+    case AST_EXPRESSION_KFLOAT:
+        expression->type = TypeCreate(TYPE_FLOAT, 0);
+        break;
+    case AST_EXPRESSION_STRING:
+        expression->type = TypeCreate(TYPE_CHAR, 1);
+        break;
+    case AST_EXPRESSION_NULL:
+        // The null expression depends on the other operand type
+        break;
+    case AST_EXPRESSION_KBOOL:
+        expression->type = TypeCreate(TYPE_BOOL, 0);
+        break;
+    case AST_EXPRESSION_CALL:
+        analyseExpressionCall(expression);
+        break;
+    case AST_EXPRESSION_VARIABLE:
+        analyseVariable(expression->u.variable_);
+        expression->type = expression->u.variable_->type;
+        if (TypeIsChar(expression->type))
+            expression->type = TypeCreate(TYPE_INT, 0);
+        break;
+    case AST_EXPRESSION_NEW:
+        analyseExpressionNew(expression);
+        break;
+    case AST_EXPRESSION_UNARY:
+        analyseExpressionUnary(expression);
+        break;
+    case AST_EXPRESSION_BINARY:
+        analyseExpressionBinary(expression);
+        break;
+    case AST_EXPRESSION_CAST:
+        // Unexpected case since cast will be added at this phase
+        assert(false);
+        break;
+    }
+
+    analyseExpression(expression->next);
+}
+
+static void analyseExpressionNew(AstExpression* expression)
+{
+    Type array_type = expression->u.new_.type;
+    AstExpression* array_size = expression->u.new_.expression;
+    analyseExpression(array_size);
+    if (!TypeIsInt(array_size->type)) {
+        ErrorL(expression->line, "mismatch type in new expression, expected 'int', "
+                "read '%s'", TypeToString(array_size->type));
+    }
+    expression->type = TypeCreate(array_type.tag, array_type.pointers + 1);
+}
+
+static void analyseExpressionCall(AstExpression* expression)
+{
+    char* identifier = expression->u.call_.u.identifier_;
+    AstDeclaration* declaration = SymbolsFind(identifier, expression->line);
+    if (declaration->tag != AST_DECLARATION_FUNCTION) {
+        ErrorL(expression->line, "cannot call non-function symbol '%s'", 
+                identifier);
+    }
+
+    AstDeclaration* declaration_parameter = declaration->u.function_.parameters;
+    AstExpression* call_parameter = expression->u.call_.expressions;
+    analyseExpression(call_parameter);
+    while (declaration_parameter != NULL && call_parameter != NULL) {
+        Type declaration_type = declaration_parameter->type;
+        setNullExpressionType(call_parameter, declaration_type);
+        Type call_type = call_parameter->type;
+        if (!TypeIsAssignable(declaration_type, call_type)) {
+            ErrorL(expression->line, "mismatch type in parameter of '%s' "
+                    "function call, cannot assign '%s' to '%s'", identifier,
+                    TypeToString(call_type), TypeToString(declaration_type));
+        }
+        insertAssignmentCast(call_parameter, declaration_type);
+        declaration_parameter = declaration_parameter->next;
+        call_parameter = call_parameter->next;
+    }
+    if (declaration_parameter != NULL || call_parameter != NULL) {
+        ErrorL(expression->line, "mismatch number of parameters in '%s' "
+                "function call", identifier);
+    }
+
+    expression->type = declaration->type;
+    if (TypeIsChar(expression->type))
+        expression->type = TypeCreate(TYPE_INT, 0);
+    expression->u.call_.is_declaration = true;
+    expression->u.call_.u.declaration_ = declaration;
+}
+
+static void analyseExpressionUnary(AstExpression* expression)
+{
+    AstExpression* subexpression = expression->u.unary_.expression;
+    analyseExpression(subexpression);
+    expression->type = subexpression->type;
+
+    AstUnaryOperator operator = expression->u.unary_.operator;
     const char* expected = NULL;
-    ast_unop operator = node->u.unary_.operator;
-    ast_exp_t* expression = node->u.unary_.expression;
-
-    analyse_exp(expression);
-    node->type = expression->type;
-
     switch (operator) {
-    case OP_NEGATE:
-        if (!is_int(expression->type) && !is_float(expression->type))
+    case AST_OPERATOR_NEGATE:
+        if (!TypeIsInt(subexpression->type) && !TypeIsFloat(subexpression->type))
             expected = "int' or 'float";
         break;
-    case OP_NOT:
-        if (!is_bool(expression->type))
+    case AST_OPERATOR_NOT:
+        if (!TypeIsBool(subexpression->type))
             expected = "bool";
         break;
     }
 
-    if (expected != NULL)
-        errorl(node->line, "mismatch type in '%s' unary operation, expected "
-                "'%s', read '%s'", ast_print_unop(operator), expected,
-                type_to_str(expression->type));
+    if (expected != NULL) {
+        ErrorL(expression->line, "mismatch type in '%s' unary operation, "
+                "expected '%s', read '%s'", AstPrintUnaryOperator(operator),
+                expected, TypeToString(subexpression->type));
+    }
 }
 
-static void analyse_exp_binary(ast_exp_t* node)
+static void analyseExpressionBinary(AstExpression* expression)
 {
+    AstExpression* left = expression->u.binary_.expression_left;
+    analyseExpression(left);
+    AstExpression* right = expression->u.binary_.expression_right;
+    analyseExpression(right);
+
+    AstBinaryOperator operator = expression->u.binary_.operator;
     bool type_error = false;
-    ast_binop operator = node->u.binary_.operator;
-    ast_exp_t* left = node->u.binary_.expression_left;
-    ast_exp_t* right = node->u.binary_.expression_right;
-
-    analyse_exp(left);
-    analyse_exp(right);
-
     switch (operator) {
-    case OP_ADD:
-    case OP_SUB:
-    case OP_MUL:
-    case OP_DIV:
-        if ((is_int(left->type) && is_int(right->type)) ||
-            (is_float(left->type) && is_float(right->type))) {
-            node->type = left->type;
-        } else if (is_int(left->type) && is_float(right->type)) {
-            node->type = right->type;
-            ast_exp_cast(left, right->type, CAST_INT_TO_FLOAT);
-        } else if (is_float(left->type) && is_int(right->type)) {
-            node->type = left->type;
-            ast_exp_cast(right, left->type, CAST_INT_TO_FLOAT);
-        } else {
-            type_error = true;
-        }
+    case AST_OPERATOR_ADD:
+    case AST_OPERATOR_SUB:
+    case AST_OPERATOR_MUL:
+    case AST_OPERATOR_DIV:
+        type_error = analyseExpressionArith(expression, left, right);
         break;
-    case OP_LESS:
-    case OP_LESS_EQUALS:
-    case OP_GREATER:
-    case OP_GREATER_EQUALS:
-        if ((is_int(left->type) && is_int(right->type)) ||
-            (is_float(left->type) && is_float(right->type)))
-            /* ok */;
-        else if (is_int(left->type) && is_float(right->type))
-            ast_exp_cast(left, right->type, CAST_INT_TO_FLOAT);
-        else if (is_float(left->type) && is_int(right->type))
-            ast_exp_cast(right, left->type, CAST_INT_TO_FLOAT);
-        else
-            type_error = true;
-        node->type = type_create(TYPE_BOOL, 0);
+    case AST_OPERATOR_LESS:
+    case AST_OPERATOR_LESS_EQUALS:
+    case AST_OPERATOR_GREATER:
+    case AST_OPERATOR_GREATER_EQUALS:
+        type_error = analyseExpressionNumberCompare(expression, left, right);
         break;
-    case OP_EQUALS:
-    case OP_NOT_EQUALS:
-        if ((is_bool(left->type) && is_bool(right->type)) ||
-            (is_int(left->type) && is_int(right->type)) ||
-            (is_float(left->type) && is_float(right->type)) ||
-            (is_array(left->type) && type_cmp(left->type, right->type)) ||
-            (is_array(left->type) && is_null(right->type)) ||
-            (is_null(left->type) && is_array(right->type))) {
-            node->type = type_create(TYPE_BOOL, 0);
-        } else if (is_int(left->type) && is_float(right->type)) {
-            node->type = type_create(TYPE_BOOL, 0);
-            ast_exp_cast(left, right->type, CAST_INT_TO_FLOAT);
-        } else if (is_float(left->type) && is_int(right->type)) {
-            node->type = type_create(TYPE_BOOL, 0);
-            ast_exp_cast(right, left->type, CAST_INT_TO_FLOAT);
-        } else {
-            type_error = true;
-        }
+    case AST_OPERATOR_EQUALS:
+    case AST_OPERATOR_NOT_EQUALS:
+        type_error = analyseExpressionCompare(expression, left, right);
         break;
-    case OP_AND:
-    case OP_OR:
-        if (is_bool(left->type) && is_bool(right->type))
-            node->type = type_create(TYPE_BOOL, 0);
-        else
-            type_error = true;
+    case AST_OPERATOR_AND:
+    case AST_OPERATOR_OR:
+        type_error = analyseExpressionLogical(expression, left, right);
         break;
     }
 
-    if (type_error)
-        errorl(node->line, "mismatch type in '%s %s %s' binary operation",
-                type_to_str(left->type), ast_print_binop(operator),
-                type_to_str(right->type));
+    if (type_error) {
+        ErrorL(expression->line, "mismatch type in '%s %s %s' binary operation",
+                TypeToString(left->type), AstPrintBinaryOperator(operator),
+                TypeToString(right->type));
+    }
 }
 
-static void analyse_var(ast_var_t* node)
+static bool analyseExpressionArith(AstExpression* expression,
+        AstExpression* left, AstExpression* right)
 {
-    switch (node->tag) {
-    case VAR_IDENTIFIER: {
-        char* id = node->u.identifier_;
-        node->tag = VAR_DECLARATION;
-        node->u.declaration_ = symbols_find(id, node->line);
-        if (node->u.declaration_->tag != DECL_VARIABLE)
-            errorl(node->line, "cannot access '%s' function's value", id);
-        node->type = node->u.declaration_->type;
+    if (!TypeIsNumerical(left->type) || !TypeIsNumerical(right->type))
+        return true;
+
+    insertNumericalCast(left, right);
+    expression->type = left->type;
+    return false;
+}
+
+static bool analyseExpressionNumberCompare(AstExpression* expression,
+        AstExpression* left, AstExpression* right)
+{
+    if (!TypeIsNumerical(left->type) || !TypeIsNumerical(right->type))
+        return true;
+
+    insertNumericalCast(left, right);
+    expression->type = TypeCreate(TYPE_BOOL, 0);
+    return false;
+}
+
+static bool analyseExpressionCompare(AstExpression* expression,
+        AstExpression* left, AstExpression* right)
+{
+    setNullExpressionType(left, right->type);
+    setNullExpressionType(right, left->type);
+
+    bool numerical =
+            TypeIsNumerical(left->type) && TypeIsNumerical(right->type);
+    bool boolean = TypeIsBool(left->type) && TypeIsBool(right->type);
+    bool array =
+            TypeIsArray(left->type) && TypeEquals(left->type, right->type);
+
+    if (!numerical && !boolean && !array)
+        return true;
+
+    insertNumericalCast(left, right);
+    expression->type = TypeCreate(TYPE_BOOL, 0);
+    return false;
+}
+
+static bool analyseExpressionLogical(AstExpression* expression,
+        AstExpression* left, AstExpression* right)
+{
+    bool error = !TypeIsBool(left->type) || !TypeIsBool(right->type);
+    if (!error)
+        expression->type = TypeCreate(TYPE_BOOL, 0);
+    return error;
+}
+
+static void analyseVariable(AstVariable* variable)
+{
+    switch (variable->tag) {
+    case AST_VARIABLE_REFERENCE: {
+        char* identifier = variable->u.reference_.u.identifier_;
+        AstDeclaration* declaration = SymbolsFind(identifier, variable->line);
+        if (declaration->tag != AST_DECLARATION_VARIABLE) {
+            ErrorL(variable->line, "cannot access '%s' function's value",
+                    identifier);
+        }
+        variable->type = declaration->type;
+        variable->u.reference_.u.declaration_ = declaration;
+        variable->u.reference_.is_declaration = true;
         break;
     }
-    case VAR_DECLARATION:
-        error("unexpected VAR_DECLARATION variable");
-        break;
-    case VAR_ARRAY: {
-        ast_exp_t* location = node->u.array_.location;
-        ast_exp_t* offset = node->u.array_.offset;
-        analyse_exp(location);
-        analyse_exp(offset);
-        if (!is_array(location->type))
-            errorl(node->line, "mismatch type in left expression of access, "
-                    "expected an array, read '%s'",
-                    type_to_str(location->type));
-        if (!is_int(offset->type))
-            errorl(node->line, "mismatch type in right expression of access, "
-                    "expected 'int', read '%s'", type_to_str(offset->type));
-        node->type = type_create(location->type.tag,
+    case AST_VARIABLE_ARRAY: {
+        AstExpression* location = variable->u.array_.location;
+        analyseExpression(location);
+        if (!TypeIsArray(location->type)) {
+            ErrorL(variable->line, "mismatch type in left expression of "
+                    "access, expected an array, read '%s'",
+                    TypeToString(location->type));
+        }
+        AstExpression* offset = variable->u.array_.offset;
+        analyseExpression(offset);
+        if (!TypeIsInt(offset->type)) {
+            ErrorL(variable->line, "mismatch type in right expression of "
+                    "access, expected 'int', read '%s'",
+                    TypeToString(offset->type));
+        }
+        variable->type = TypeCreate(location->type.tag,
                 location->type.pointers - 1);
         break;
     }
     }
 }
 
-static bool is_bool(type_t type)
+static void setNullExpressionType(AstExpression* expression, Type type)
 {
-    return type.tag == TYPE_BOOL && type.pointers == 0;
+    if (expression->tag == AST_EXPRESSION_NULL && TypeIsArray(type))
+        expression->type = type;
 }
 
-static bool is_char(type_t type)
+static void insertAssignmentCast(AstExpression* expression, Type variable)
 {
-    return type.tag == TYPE_CHAR && type.pointers == 0;
+    if (TypeIsChar(variable))
+        variable = TypeCreate(TYPE_INT, 0);
+
+    if (TypeIsInt(variable) && TypeIsFloat(expression->type))
+        AstExpressionCast(expression, variable, AST_CAST_FLOAT_TO_INT);
+    else if (TypeIsFloat(variable) && TypeIsInt(expression->type))
+        AstExpressionCast(expression, variable, AST_CAST_INT_TO_FLOAT);
 }
 
-static bool is_int(type_t type)
+static void insertNumericalCast(AstExpression* left, AstExpression* right)
 {
-    return type.tag == TYPE_INT && type.pointers == 0;
-}
-
-static bool is_float(type_t type)
-{
-    return type.tag == TYPE_FLOAT && type.pointers == 0;
-}
-
-static bool is_array(type_t type)
-{
-    return type.tag != TYPE_VOID && type.tag != TYPE_NULL &&
-           type.tag != TYPE_UNDEFINED && type.pointers > 0;
-}
-
-static bool is_null(type_t type)
-{
-    return type.tag == TYPE_NULL;
-}
-
-static bool is_assignable(type_t variable, type_t expression)
-{
-    return type_cmp(variable, expression) ||
-           (is_array(variable) && is_null(expression)) ||
-           (is_int(variable) && is_float(expression)) ||
-           (is_float(variable) && is_int(expression)) ||
-           (is_char(variable) && is_float(expression)) ||
-           (is_char(variable) && is_int(expression));
-}
-
-static bool is_void(type_t type)
-{
-    return type.tag == TYPE_VOID;
-}
-
-static void symbol_to_exp(ast_exp_t* node)
-{
-    if (is_char(node->type))
-        node->type = type_create(TYPE_INT, 0);
-}
-
-static void exp_to_symbol(ast_exp_t* node, type_t variable)
-{
-    if (is_char(variable))
-        variable = type_create(TYPE_INT, 0);
-    if (is_int(variable) && is_float(node->type))
-        ast_exp_cast(node, variable, CAST_FLOAT_TO_INT);
-    else if (is_float(variable) && is_int(node->type))
-        ast_exp_cast(node, variable, CAST_INT_TO_FLOAT);
+    if (!TypeEquals(left->type, right->type)) {
+        if (TypeIsInt(left->type))
+            AstExpressionCast(left, right->type, AST_CAST_INT_TO_FLOAT);
+        else
+            AstExpressionCast(right, left->type, AST_CAST_INT_TO_FLOAT);
+    }
 }
 

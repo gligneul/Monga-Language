@@ -1,10 +1,12 @@
-# PUC-Rio
-# INF1715 Compiladores
-# Gabriel de Quadros Ligneul 1212560
+# Monga
+# Author: Gabriel de Quadros Ligneul
 
 # This makefile generates the dependencies files.
+
+CFLAGS=-iquotesrc `llvm-config --cflags`
 
 all: $(patsubst src/%.c,obj/%.d,$(shell find src -name "*.c"))
 
 obj/%.d: src/%.c
-	gcc -iquotesrc -MM $< -MT $(patsubst %.d,%.o,$@) -o $@
+	clang $(CFLAGS) -MM $< -MT $(patsubst %.d,%.o,$@) -o $@
+

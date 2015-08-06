@@ -1,0 +1,98 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+void printMatrix(float[][] matrix, int n, int m) {
+    int i, j;
+    i = 0;
+    while (i < n) {
+        j = 0;
+        while (j < m) {
+            print matrix[i][j], " ";
+            j = j + 1;
+        }
+        i = i + 1;
+        print "\n";
+    }
+}
+
+float[][] multiplyMatrices(int n, float[][] a, float[][] b) {
+    int i, j, k;
+    float value;
+    float[][] out;
+
+    out = new float[][n];
+    i = 0;
+    while (i < n) {
+        out[i] = new float[n];
+        j = 0;
+        while (j < n) {
+            value = 0;
+            k = 0;
+            while (k < n) {
+                value = value + a[i][k] * b[k][j];
+                k = k + 1;
+            }
+            out[i][j] = value;
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return out;
+}
+
+float[][] createMatrix(int n) {
+    float[][] out;
+    int i;
+
+    out = new float[][n];
+    i = 0;
+    while (i < n) {
+        out[i] = new float[n];
+        i = i + 1;
+    }
+    return out;
+}
+
+void destroyMatrix(float[][] matrix, int n) {
+    int i;
+
+    i = 0;
+    while (i < n) {
+        delete matrix[i];
+        i = i + 1;
+    }
+    delete matrix;
+}
+
+int main() {
+    float[][] a, b, c;
+
+    a = createMatrix(2);
+    b = createMatrix(2);
+
+    a[0][0] = 2.1;
+    a[0][1] = 4.3;
+    a[1][0] = 1.2;
+    a[1][1] = 5.6;
+
+    b[0][0] = 7.1;
+    b[0][1] = 9.5;
+    b[1][0] = 3.2;
+    b[1][1] = 0.8;
+
+    c = multiplyMatrices(2, a, b);
+
+    printMatrix(a, 2, 2);
+    print "x\n";
+    printMatrix(b, 2, 2);
+    print "=\n";
+    printMatrix(c, 2, 2);
+
+    destroyMatrix(a, 2);
+    destroyMatrix(b, 2);
+    destroyMatrix(c, 2);
+    return 0;
+}

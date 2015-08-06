@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * symbols.h
  * Data structure that represents the symbol's table.
@@ -15,16 +14,16 @@
 #include "ast/ast.h"
 
 /* Adds a symbol to the table */
-void symbols_add(char* identifier, ast_decl_t* declaration, int line);
+void SymbolsAdd(char* identifier, AstDeclaration* declaration, int line);
 
 /* Retrieves a symbol from the table */
-ast_decl_t* symbols_find(char* indentifer, int line);
+AstDeclaration* SymbolsFind(char* indentifer, int line);
 
 /* Opens a block */
-void symbols_open_block();
+void SymbolsOpenBlock();
 
 /* Closes a block */
-void symbols_close_block();
+void SymbolsCloseBlock();
 
 #endif
 

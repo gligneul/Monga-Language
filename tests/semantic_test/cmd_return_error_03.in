@@ -1,0 +1,10 @@
+/*
+ * Monga
+ *
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+bool foo() {
+    return new bool[1];
+}
+

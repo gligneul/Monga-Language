@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * new.c
  */
@@ -10,16 +9,16 @@
 
 #include "util/error.h"
 
-#define ERROR error("unable to allocate memory")
+#define ERROR Error("unable to allocate memory")
 
-void* new_alloc(size_t size)
+void* NewMalloc(size_t size)
 {
     void* out = malloc(size);
     if (!out) ERROR;
     return out;
 }
 
-void* new_realloc(void* mem, size_t size)
+void* NewRealloc(void* mem, size_t size)
 {
     void* out = realloc(mem, size);
     if (!out) ERROR;

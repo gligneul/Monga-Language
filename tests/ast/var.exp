@@ -1,12 +1,14 @@
 
-(proto float[][] get_matrix<9>)
-
-(func int main<11>
+(func float[][] get_matrix<9>
   (block
-    (var char c<12>)
-    (var int i<13>)
-    (var float f<14>)
-    (var char[] s<15>)
+    (return null)))
+
+(func int main<13>
+  (block
+    (var char c<14>)
+    (var int i<15>)
+    (var float f<16>)
+    (var char[] s<17>)
     (assign c 258)
     (assign i c)
     (assign f i)

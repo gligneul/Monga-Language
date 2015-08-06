@@ -1,7 +1,6 @@
 /*
- * PUC-Rio
- * INF1715 Compiladores
- * Gabriel de Quadros Ligneul 1212560
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
  *
  * semantic.h
  */
@@ -12,7 +11,7 @@
 #include "ast/ast.h"
 
 /* Makes the semantic analysis in the AST */
-void semantic_analysis(ast_decl_t* ast);
+AstDeclaration* SemanticAnalyseTree(AstDeclaration* ast);
 
 #endif
 

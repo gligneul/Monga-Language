@@ -1,0 +1,10 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int foo() {
+    while (true) {
+    }
+}
+

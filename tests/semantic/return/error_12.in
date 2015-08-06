@@ -1,0 +1,12 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int foo() {
+    {
+        return 1;
+    }
+    return 2;
+}
+

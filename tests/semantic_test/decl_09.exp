@@ -1,0 +1,14 @@
+
+(var int a<7>)
+
+(func void foo<9>
+  (var char a<9>)
+  (block
+    (assign a<9> 97:int)
+    (return)))
+
+(func int main<13>
+  (block
+    (assign a<7> 10:int)
+    (foo<9> a<7>:int):void
+    (return 0:int)))
