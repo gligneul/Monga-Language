@@ -66,6 +66,12 @@ TableRef TableCreate(TableDestroyFunction destroykey,
     return table;
 }
 
+TableRef TableCreateDummy()
+{
+    return TableCreate(TableDummyDestroy, TableDummyDestroy, TableDummyCopy,
+            TableDummyCopy, TableDummyLess);
+}
+
 void TableDestroy(TableRef table)
 {
     nodeDestroy(table->root, table);
@@ -122,6 +128,31 @@ TablePair* TableToArray(TableRef table)
     pairs = (TablePair*)malloc(sizeof(TablePair) * table->size);
     nodeToArray(table->root, pairs, &i);
     return pairs;
+}
+
+TableRef TableClone(TableRef table)
+{
+    TablePair* pairs = TableToArray(table);
+    TableRef clone = TableCreate(table->destroykey, table->destroydata,
+            table->copykey, table->copydata, table->less);
+    for (int i = 0; i < TableSize(table); ++i)
+        TableInsert(clone, pairs[i].key, pairs[i].data);
+    free(pairs);
+    return clone;
+}
+
+TableRef TableMerge(TableRef tables[], int n)
+{
+    TableRef merge = TableCreate(tables[0]->destroykey, tables[0]->destroydata,
+            tables[0]->copykey, tables[0]->copydata, tables[0]->less);
+    for (int table_index = 0; table_index < n; ++table_index) {
+        TableRef table = tables[table_index];
+        TablePair* pairs = TableToArray(table);
+        for (int i = 0; i < TableSize(table); ++i)
+            TableInsert(merge, pairs[i].key, pairs[i].data);
+        free(pairs);
+    }
+    return merge;
 }
 
 void TableDummyDestroy(void* p)

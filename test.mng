@@ -2,12 +2,18 @@
  * Monga test file
  */
 
-int foo(float a, int b) {
-    return a + b;
+void foo(bool b) {
+    char[] s;
+    s = "";
+    if (b)
+        s = "> true\n";
+    else
+        s = "> false\n";
+    print s;
 }
 
 int main() {
-    print "oi: ", foo(3, 5);
+    foo(true);
     return 0;
 }
 

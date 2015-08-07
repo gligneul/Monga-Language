@@ -32,6 +32,9 @@ TableRef TableCreate(TableDestroyFunction destroykey,
         TableDestroyFunction destroydata, TableCopyFunction copykey,
         TableCopyFunction copydata, TableLessFunction less);
 
+/* Creates a new table with the dummys functions */
+TableRef TableCreateDummy();
+
 /* Destroys the table. */
 void TableDestroy(TableRef table);
 
@@ -52,6 +55,12 @@ int TableSize(TableRef table);
 
 /* Creates an array with table contents */
 TablePair* TableToArray(TableRef table);
+
+/* Creates an copy of the table */
+TableRef TableClone(TableRef table);
+
+/* Merges any number of tables into one table */
+TableRef TableMerge(TableRef tables[], int n);
 
 /* Dummy deallocation function, do nothing */
 void TableDummyDestroy(void* p);

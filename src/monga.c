@@ -26,14 +26,11 @@ static int executeModule(LLVMModuleRef module);
 
 int main()
 {
-    LLVMModuleRef module;
-    if (!yyparse()) {
-        AstDeclaration* tree = SemanticAnalyseTree(parser_ast);
-        module = IRCompileModule(tree);
-        exportModule(module);
-        return executeModule(module);
-    }
-    return 1;
+    yyparse();
+    SemanticAnalyseTree(parser_ast);
+    LLVMModuleRef module = IRCompileModule(parser_ast);
+    exportModule(module);
+    return executeModule(module);
 }
 
 static void exportModule(LLVMModuleRef module)

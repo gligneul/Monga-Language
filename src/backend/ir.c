@@ -5,10 +5,13 @@
  * ir.c
  */
 
+// TODO: merge das funções de merge
+
 #include <assert.h>
 #include <string.h>
 
 #include <llvm-c/Analysis.h>
+#include <llvm-c/BitWriter.h>
 
 #include "ir.h"
 
@@ -37,6 +40,9 @@ typedef struct IRState {
     /* Map AstDeclaration to LLVMValueRef */
     TableRef declarations;
 
+    /* Set of local assignments */
+    TableRef local_assignments;
+
     /* Current function */
     LLVMValueRef function;
 } IRState;
@@ -52,6 +58,10 @@ static IRState* createState(LLVMModuleRef module);
 
 /* Destroys the state */
 static void destroyState(IRState* state);
+
+/* Creates an copy of the state, clone the declarations
+ * and create a new local_assignments */
+static IRState* createSubState(IRState* state);
 
 /* Creates the equivalent llvm type */
 static LLVMTypeRef createType(Type type);
@@ -94,6 +104,32 @@ static void compileStatementAssign(AstStatement* statement, IRState* state);
 static void compileStatementDelete(AstStatement* statement, IRState* state);
 static void compileStatementPrint(AstStatement* statement, IRState* state);
 static void compileStatementReturn(AstStatement* statement, IRState* state);
+
+/* Adds an local assignment to the state */
+static void addLocalAssignment(IRState* state, AstDeclaration* declaration,
+        LLVMValueRef value);
+
+/* Gets the local assignment of the state */
+static LLVMValueRef getLocalAssignment(IRState* state,
+        AstDeclaration* declaration, LLVMValueRef backup);
+
+/* Merges a block back with it's base statement */
+static void mergeBlockWithBaseStatement(LLVMBasicBlockRef sub_block,
+        IRState* sub_state, LLVMBasicBlockRef base_in_block,
+        LLVMBasicBlockRef base_out_block, IRState* base_state);
+
+/* Merges two blocks into one block */
+static void mergeBlocks(LLVMBasicBlockRef left_block, IRState* left_state,
+        LLVMBasicBlockRef right_block, IRState* right_state,
+        LLVMBasicBlockRef out_block, IRState* out_state);
+
+/* Adds inconditional from a block to another */
+static void setBlockJump(LLVMBuilderRef builder, LLVMBasicBlockRef from,
+        LLVMBasicBlockRef to);
+
+/* Adds incondition jump and adds statements assignments */
+static void setBlockContinuation(LLVMBasicBlockRef from_block,
+        IRState* from_state, LLVMBasicBlockRef to_block, IRState* to_state);
 
 /* Compiles expressions */
 static LLVMValueRef compileExpression(AstExpression* expression,
@@ -143,6 +179,7 @@ LLVMModuleRef IRCompileModule(AstDeclaration* tree)
 static void verifyModule(LLVMModuleRef module)
 {
     char *error = NULL;
+    LLVMWriteBitcodeToFile(module, "monga.bc");
     LLVMVerifyModule(module, LLVMAbortProcessAction, &error);
     LLVMDisposeMessage(error);
 }
@@ -153,10 +190,10 @@ static IRState* createState(LLVMModuleRef module)
     state->module = module;
     state->builder = LLVMCreateBuilder();
     state->printf = createPrintfPrototype(module);
-    state->strings = TableCreate(TableDummyDestroy, TableDummyDestroy,
-            TableDummyCopy, TableDummyCopy, TableDummyLess);
-    state->declarations = TableCreate(TableDummyDestroy, TableDummyDestroy,
-            TableDummyCopy, TableDummyCopy, TableDummyLess);
+    state->strings = TableCreateDummy();
+    state->declarations = TableCreateDummy();
+    state->local_assignments = TableCreateDummy();
+    state->function = NULL;
     return state;
 }
 
@@ -165,7 +202,21 @@ static void destroyState(IRState* state)
     LLVMDisposeBuilder(state->builder);
     TableDestroy(state->strings);
     TableDestroy(state->declarations);
+    TableDestroy(state->local_assignments);
     free(state);
+}
+
+static IRState* createSubState(IRState* state)
+{
+    IRState* clone = NEW(IRState);
+    clone->module = state->module;
+    clone->builder = state->builder;
+    clone->printf = state->printf;
+    clone->strings = TableClone(state->strings);
+    clone->declarations = TableClone(state->declarations);
+    clone->local_assignments = TableCreateDummy();
+    clone->function = state->function;
+    return clone;
 }
 
 static LLVMTypeRef createType(Type type)
@@ -373,9 +424,50 @@ static LLVMBasicBlockRef compileStatements(AstStatement* statement,
 static LLVMBasicBlockRef compileStatementIf(AstStatement* statement,
         LLVMBasicBlockRef in_block, IRState* state)
 {
-    (void)statement;
-    (void)state;
-    return in_block;
+    AstExpression* expression = statement->u.if_.expression;
+    LLVMValueRef value = compileExpression(expression, state);
+    AstStatement* then_statement = statement->u.if_.then_statement;
+    AstStatement* else_statement = statement->u.if_.else_statement;
+
+    IRState* then_state = createSubState(state);
+    LLVMBasicBlockRef then_block = compileStatements(then_statement,
+            LLVMAppendBasicBlock(state->function, "then"), then_state);
+
+    LLVMBasicBlockRef out_block = LLVMAppendBasicBlock(state->function, "out");
+
+    if (else_statement == NULL) {
+        LLVMPositionBuilderAtEnd(state->builder, in_block);
+        LLVMBuildCondBr(state->builder, value, then_block, out_block);
+
+        if (!then_statement->returned) {
+            mergeBlockWithBaseStatement(then_block, then_state, in_block,
+                    out_block, state);
+        }
+    } else {
+        IRState* else_state = createSubState(state);
+        LLVMBasicBlockRef else_block = compileStatements(else_statement,
+                LLVMAppendBasicBlock(state->function, "else"), else_state);
+
+        LLVMPositionBuilderAtEnd(state->builder, in_block);
+        LLVMBuildCondBr(state->builder, value, then_block, then_block);
+
+        if (then_statement->returned && else_statement->returned) {
+            LLVMDeleteBasicBlock(out_block);
+            out_block = NULL;
+        } else if (then_statement->returned) {
+            setBlockContinuation(else_block, else_state, out_block, state);
+        } else if (else_statement->returned) {
+            setBlockContinuation(then_block, then_state, out_block, state);
+        } else {
+            mergeBlocks(then_block, then_state, else_block, else_state,
+                    out_block, state);
+        }
+        
+        destroyState(else_state);
+    }
+
+    destroyState(then_state);
+    return out_block;
 }
 
 static LLVMBasicBlockRef compileStatementWhile(AstStatement* statement,
@@ -405,8 +497,7 @@ static void compileStatementAssign(AstStatement* statement, IRState* state)
                     declaration).data;
             LLVMBuildStore(state->builder, value, llvm_variable);
         } else {
-            TableErase(state->declarations, declaration);
-            TableInsert(state->declarations, declaration, value);
+            addLocalAssignment(state, declaration, value);
         }
     }
     }
@@ -452,6 +543,115 @@ static void compileStatementReturn(AstStatement* statement, IRState* state)
     } else {
             LLVMBuildRetVoid(state->builder);
     }
+}
+
+static void addLocalAssignment(IRState* state, AstDeclaration* declaration,
+        LLVMValueRef value)
+{
+    TableErase(state->local_assignments, declaration);
+    TableInsert(state->local_assignments, declaration, value);
+    TableErase(state->declarations, declaration);
+    TableInsert(state->declarations, declaration, value);
+}
+
+static LLVMValueRef getLocalAssignment(IRState* state,
+        AstDeclaration* declaration, LLVMValueRef backup)
+{
+    TablePair pair = TableFind(state->local_assignments, declaration);
+    if (pair.key != NULL)
+        return pair.data;
+    return backup;
+}
+
+static void mergeBlockWithBaseStatement(LLVMBasicBlockRef sub_block,
+        IRState* sub_state, LLVMBasicBlockRef base_in_block,
+        LLVMBasicBlockRef base_out_block, IRState* base_state)
+{
+    LLVMBuilderRef builder = base_state->builder;
+    setBlockJump(builder, sub_block, base_out_block);
+
+    LLVMPositionBuilderAtEnd(builder, base_out_block);
+    TablePair* sub_assignments = TableToArray(sub_state->local_assignments);
+    int n_assignments = TableSize(sub_state->local_assignments);
+
+    LLVMValueRef phis[n_assignments];
+    LLVMValueRef base_values[n_assignments];
+    LLVMValueRef sub_values[n_assignments];
+
+    for (int i = 0; i < n_assignments; ++i) {
+        AstDeclaration* declaration = (AstDeclaration*)sub_assignments[i].key;
+        TablePair base_assignment =
+                TableFind(base_state->declarations, declaration);
+        phis[i] = LLVMBuildPhi(builder, createType(declaration->type), "");
+        base_values[i] = (LLVMValueRef)base_assignment.data;
+        sub_values[i] = (LLVMValueRef)sub_assignments[i].data;
+        addLocalAssignment(base_state, declaration, phis[i]);
+    }
+
+    for (int i = 0; i < n_assignments; ++i) {
+        LLVMValueRef incomming_values[] = {base_values[i], sub_values[i]};
+        LLVMBasicBlockRef incomming_blocks[] = {base_in_block, sub_block};
+        LLVMAddIncoming(phis[i], incomming_values, incomming_blocks, 2);
+    }
+
+    free(sub_assignments);
+}
+
+static void mergeBlocks(LLVMBasicBlockRef left_block, IRState* left_state,
+        LLVMBasicBlockRef right_block, IRState* right_state,
+        LLVMBasicBlockRef out_block, IRState* out_state)
+{
+    LLVMBuilderRef builder = out_state->builder;
+    setBlockJump(builder, left_block, out_block);
+    setBlockJump(builder, right_block, out_block);
+
+    TableRef tables[] = {left_state->local_assignments,
+            right_state->local_assignments};
+    TableRef assignments_set = TableMerge(tables, 2);
+    TablePair* assignments = TableToArray(assignments_set);
+    int n_assignments = TableSize(assignments_set);
+
+    LLVMValueRef phis[n_assignments];
+    LLVMValueRef left_values[n_assignments];
+    LLVMValueRef right_values[n_assignments];
+
+    for (int i = 0; i < n_assignments; ++i) {
+        AstDeclaration* declaration = (AstDeclaration*)assignments[i].key;
+        LLVMValueRef backup = (LLVMValueRef)
+                TableFind(out_state->declarations, declaration).data;
+        phis[i] = LLVMBuildPhi(builder, createType(declaration->type), "");
+        left_values[i] = getLocalAssignment(left_state, declaration, backup);
+        right_values[i] = getLocalAssignment(right_state, declaration, backup);
+        addLocalAssignment(out_state, declaration, phis[i]);
+    }
+
+    for (int i = 0; i < n_assignments; ++i) {
+        LLVMValueRef incomming_values[] = {left_values[i], right_values[i]};
+        LLVMBasicBlockRef incomming_blocks[] = {left_block, right_block};
+        LLVMAddIncoming(phis[i], incomming_values, incomming_blocks, 2);
+    }
+
+    TableDestroy(assignments_set);
+    free(assignments);
+}
+
+static void setBlockJump(LLVMBuilderRef builder, LLVMBasicBlockRef from,
+        LLVMBasicBlockRef to)
+{
+    LLVMPositionBuilderAtEnd(builder, from);
+    LLVMBuildBr(builder, to);
+}
+
+static void setBlockContinuation(LLVMBasicBlockRef from_block,
+        IRState* from_state, LLVMBasicBlockRef to_block, IRState* to_state)
+{
+    setBlockJump(from_state->builder, from_block, to_block);
+    TablePair* assignments = TableToArray(from_state->local_assignments);
+    for (int i = 0; i < TableSize(from_state->local_assignments); ++i) {
+        addLocalAssignment(to_state, (AstDeclaration*)assignments[i].key,
+                (LLVMValueRef)assignments[i].data);
+    }
+    free(assignments);
 }
 
 static LLVMValueRef compileExpression(AstExpression* expression,
