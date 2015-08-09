@@ -1,7 +1,0 @@
-#!/bin/sh
-./bin/monga < test.mng && \
-llvm-dis monga.bc && \
-rm monga.bc && \
-cat monga.ll && \
-rm monga.ll
-

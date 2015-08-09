@@ -1,0 +1,29 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int a;
+
+void foo() {
+    print "foo()\n";
+}
+
+void bar(int a, float b) {
+    print "bar(", a," ,", b,")\n";
+}
+
+int boo(char[] s) {
+    print "boo(\"", s, "\")\n";
+    return 123;
+}
+
+int main() {
+    int ret;
+    foo();
+    bar(123, 456.0);
+    ret = boo("abcd");
+    print "ret = ", ret;
+    return 0;
+}
+

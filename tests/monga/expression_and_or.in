@@ -1,0 +1,42 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+bool _true() {
+    print "_true()\n";
+    return true;
+}
+
+bool _false() {
+    print "_false()\n";
+    return false;
+}
+
+void or() {
+    print "or()\n";
+    if (_true() || _true()) {}
+    print ".\n";
+    if (_true() || _false()) {}
+    print ".\n";
+    if (_false() || _true()) {}
+    print ".\n";
+    if (_false() || _false()) {}
+}
+
+void and() {
+    print "and()\n";
+    if (_true() && _true()) {}
+    print ".\n";
+    if (_true() && _false()) {}
+    print ".\n";
+    if (_false() && _true()) {}
+    print ".\n";
+    if (_false() && _false()) {}
+}
+
+int main() {
+    or();
+    and();
+    return 0;
+}

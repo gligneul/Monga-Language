@@ -1,0 +1,14 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int main() {
+    int a;
+    a = 10;
+    print a;
+    a = 1 + a;
+    print a;
+    return 0;
+}
+

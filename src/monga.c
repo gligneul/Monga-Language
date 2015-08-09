@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <llvm-c/ExecutionEngine.h>
 #include <llvm-c/Target.h>
@@ -24,12 +25,21 @@ static void exportModule(LLVMModuleRef module);
 /* Executes a LLVM module */
 static int executeModule(LLVMModuleRef module);
 
-int main()
+int main(int argc, char* argv[])
 {
     yyparse();
     SemanticAnalyseTree(parser_ast);
     LLVMModuleRef module = IRCompileModule(parser_ast);
-    exportModule(module);
+
+    if (argc > 1) {
+        if (strcmp(argv[1], "-bc") == 0)
+            exportModule(module);
+        else if (strcmp(argv[1], "-d") == 0)
+            LLVMDumpModule(module);
+        else
+            Error("Unknown option: %s", argv[1]);
+    }
+
     return executeModule(module);
 }
 

@@ -1,0 +1,14 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int main() {
+    print 123;
+    print 55.9;
+    print true;
+    print false;
+    print "String!\n";
+    print "Complex print statement ", 3, " abc ", 4.5;
+    return 0;
+}
