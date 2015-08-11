@@ -6,5 +6,6 @@ src/parser/parser.tab.*
 bin/*
 obj/*
 
-# examples
-examples/*.mng.*
+# auxiliar test files
+test/*/done
+
