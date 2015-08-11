@@ -41,14 +41,15 @@
 (func int foo5<41>
   (block
     (while true:bool
-      (return 0:int))))
+      (return 0:int))
+    (return 2:int)))
 
-(func int foo6<46>
-  (var bool cond<46>)
+(func int foo6<47>
+  (var bool cond<47>)
   (block
-    (var int a<47>)
-    (var int b<47>)
+    (var int a<48>)
+    (var int b<48>)
     (while true:bool
-      (if cond<46>:bool
-          (return a<47>:int)))
-    (return b<47>:int)))
+      (if cond<47>:bool
+          (return a<48>:int)))
+    (return b<48>:int)))

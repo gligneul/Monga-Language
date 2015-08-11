@@ -187,15 +187,14 @@ static bool analyseStatementWhile(AstStatement* statement)
     analyseExpression(expression);
 
     AstStatement* substatement = statement->u.while_.statement;
-    bool returned = analyseStatement(substatement);
+    analyseStatement(substatement);
 
     if (!TypeIsBool(expression->type)) {
         ErrorL(statement->line, "mismatch type in while's expression, expected "
                 "'bool', read '%s'", TypeToString(expression->type));
     }
 
-    statement->returned = returned;
-    return returned;
+    return false;
 }
 
 static bool analyseStatementAssign(AstStatement* statement)

@@ -12,6 +12,7 @@ int main() {
         print i, " ";
         i = i + 1;
     }
+    print "\n";
     return 0;
 }
 

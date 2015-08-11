@@ -4,7 +4,7 @@
  * Author: Gabriel de Quadros Ligneul
  */
 
-#define ARRAY_SIZE 20
+int ARRAY_SIZE;
 
 void bubbleSort(int[] array, int size) {
     while (size > 1) {
@@ -58,6 +58,8 @@ void fillArray(int[] array) {
 
 int main() {
     int[] array;
+
+    ARRAY_SIZE = 20;
     array = new int[ARRAY_SIZE];
     fillArray(array);
     print "Array:\n";

@@ -41,6 +41,7 @@ void foo4(bool cond1, bool cond2) {
 void foo5() {
     while (true)
         return;
+    return;
 }
 
 void foo6(bool cond) {

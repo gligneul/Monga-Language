@@ -41,6 +41,7 @@ int foo4(bool cond1, bool cond2) {
 int foo5() {
     while (true)
         return 0;
+    return 2;
 }
 
 int foo6(bool cond) {

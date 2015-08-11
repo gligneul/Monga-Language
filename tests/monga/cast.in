@@ -1,0 +1,21 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int global_i;
+float global_f;
+
+int main() {
+    int i;
+    float f;
+    i = .8 + .2;
+    print "i - ", i;
+    f = 1 + i;
+    print "f - ", f;
+    global_i = .3 * 2 + (f + .5);
+    print "global_i - ", global_i;
+    global_f = 4;
+    print "global_f - ", global_f;
+    return 0;
+}

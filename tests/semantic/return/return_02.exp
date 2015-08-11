@@ -41,12 +41,13 @@
 (func void foo5<41>
   (block
     (while true:bool
-      (return))))
+      (return))
+    (return)))
 
-(func void foo6<46>
-  (var bool cond<46>)
+(func void foo6<47>
+  (var bool cond<47>)
   (block
     (while true:bool
-      (if cond<46>:bool
+      (if cond<47>:bool
           (return)))
     (return)))

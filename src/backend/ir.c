@@ -512,11 +512,64 @@ static LLVMBasicBlockRef compileStatementIf(AstStatement* statement,
 static LLVMBasicBlockRef compileStatementWhile(AstStatement* statement, 
         LLVMBasicBlockRef in_block, TableRef declarations, IRState* state)
 {
-    assert(false);
-    (void)statement;
-    (void)declarations;
-    (void)state;
-    return in_block;
+    // Creates the while's blocks
+    LLVMBasicBlockRef expression_in_block =
+            LLVMAppendBasicBlock(state->function, "while_expression");
+    LLVMBasicBlockRef statement_in_block =
+            LLVMAppendBasicBlock(state->function, "while_statement");
+    LLVMBasicBlockRef out_block =
+            LLVMAppendBasicBlock(state->function, "while_out");
+
+    // Add jump from input block to while's expression block
+    LLVMPositionBuilderAtEnd(state->builder, in_block);
+    LLVMBuildBr(state->builder, expression_in_block);
+
+    // Create phis variables
+    int n_locals;
+    TablePair* locals = getLocalDeclarations(declarations, &n_locals);
+    LLVMValueRef phis[n_locals];
+
+    // Add phis at the beginning of the expression block
+    LLVMPositionBuilderAtEnd(state->builder, expression_in_block);
+    for (int i = 0; i < n_locals; ++i) {
+        AstDeclaration* declaration = locals[i].key;
+        LLVMTypeRef phi_type = createType(declaration->type);
+        phis[i] = LLVMBuildPhi(state->builder, phi_type, "");
+        TableErase(declarations, declaration);
+        TableInsert(declarations, declaration, phis[i]);
+    }
+
+    // Compile expression and add the jump to statement block or out block
+    AstExpression* expression = statement->u.while_.expression;
+    IRBlockValue expression_return = compileExpression(expression,
+            expression_in_block, declarations, state);
+    LLVMPositionBuilderAtEnd(state->builder, expression_return.block);
+    LLVMBuildCondBr(state->builder, expression_return.value,
+            statement_in_block, out_block);
+
+    // Compile statement
+    TableRef while_declarations = TableClone(declarations);
+    AstStatement* substatment = statement->u.while_.statement;
+    LLVMBasicBlockRef statement_out_block = compileStatements(substatment,
+            statement_in_block, while_declarations, state);
+    LLVMPositionBuilderAtEnd(state->builder, statement_out_block);
+    LLVMBuildBr(state->builder, expression_in_block);
+
+    // Add phis' incomming values
+    for (int i = 0; i < n_locals; ++i) {
+        AstDeclaration* declaration = locals[i].key;
+        LLVMValueRef in_value = locals[i].data;
+        LLVMValueRef statement_value =
+                TableFind(while_declarations, declaration).data;
+        LLVMValueRef incomming_values[] = {in_value, statement_value};
+        LLVMBasicBlockRef incomming_blocks[] = {in_block, statement_out_block};
+        LLVMAddIncoming(phis[i], incomming_values, incomming_blocks, 2);
+    }
+
+    TableDestroy(while_declarations);
+    free(locals);
+
+    return out_block;
 }
 
 static LLVMBasicBlockRef compileStatementAssign(AstStatement* statement, 
@@ -638,19 +691,21 @@ static void mergeBlocks(LLVMBasicBlockRef left_block,
         TableRef right_declarations, LLVMBasicBlockRef out_block,
         TableRef declarations, IRState* state)
 {
+    // Add jumps from left and right to output block
     LLVMPositionBuilderAtEnd(state->builder, left_block);
     LLVMBuildBr(state->builder, out_block);
     LLVMPositionBuilderAtEnd(state->builder, right_block);
     LLVMBuildBr(state->builder, out_block);
     LLVMPositionBuilderAtEnd(state->builder, out_block);
 
+    // Create phi variables
     int n_locals;
     TablePair* locals = getLocalDeclarations(declarations, &n_locals);
-
     LLVMValueRef phis[n_locals];
     LLVMValueRef left_values[n_locals];
     LLVMValueRef right_values[n_locals];
 
+    // Add phis to the beginning of the output block
     for (int i = 0; i < n_locals; ++i) {
         AstDeclaration* declaration = locals[i].key;
         LLVMValueRef backup = locals[i].data;
@@ -668,6 +723,7 @@ static void mergeBlocks(LLVMBasicBlockRef left_block,
         }
     }
 
+    // Add phis' incomming values
     for (int i = 0; i < n_locals; ++i) {
         if (phis[i] == NULL)
             continue;
