@@ -9,7 +9,6 @@
 #include <string.h>
 
 #include <llvm-c/Analysis.h>
-#include <llvm-c/BitWriter.h>
 
 #include "ir.h"
 
@@ -31,6 +30,9 @@ typedef struct IRState {
 
     /* Printf prototype reference */
     LLVMValueRef printf;
+
+    /* Boolean strings for printf */
+    LLVMValueRef bool_strings;
 
     /* Maps literal strings to LLVMValueRef */
     TableRef strings;
@@ -65,6 +67,9 @@ static LLVMTypeRef createFunctionType(AstDeclaration* function);
 
 /* Creates the printf prototype */
 static LLVMValueRef createPrintfPrototype(LLVMModuleRef module);
+
+/* Creates an array with {"false", "true"} */
+static LLVMValueRef createBooleanStrings(LLVMModuleRef module);
 
 /* Creates the format function based on a list of expressions */
 static LLVMValueRef createPrintfFormat(AstExpression* expressions,
@@ -172,6 +177,19 @@ static LLVMValueRef compileExpressionBinaryFloatCmp(AstBinaryOperator operator,
 static IRBlockValue compileExpressionCast(AstExpression* expression,
         LLVMBasicBlockRef in_block, TableRef declarations, IRState* state);
 
+/* Compiles the expression and jumps to the corresponding block */
+static void compileJump(AstExpression* expression,
+        LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state);
+
+static void compileJumpExpression(AstExpression* expression,
+        LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state);
+
+static void compileJumpBinary(AstExpression* expression,
+        LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state);
+
 /* Returns the pointer to the array's element */
 static IRBlockValue compileVariableArray(AstVariable* variable,
         LLVMBasicBlockRef in_block, TableRef declarations, IRState* state);
@@ -211,6 +229,7 @@ static IRState* createState(LLVMModuleRef module)
     state->module = module;
     state->builder = LLVMCreateBuilder();
     state->printf = createPrintfPrototype(module);
+    state->bool_strings = createBooleanStrings(module);
     state->strings = TableCreateDummy();
     state->function = NULL;
     return state;
@@ -275,6 +294,29 @@ static LLVMValueRef createPrintfPrototype(LLVMModuleRef module)
     return function;
 }
 
+static LLVMValueRef createBooleanStrings(LLVMModuleRef module)
+{
+    LLVMTypeRef str_type = LLVMPointerType(LLVMInt8Type(), 0);
+
+    LLVMValueRef false_string = LLVMAddGlobal(module,
+            LLVMArrayType(LLVMInt8Type(), 6), ".false");
+    LLVMSetInitializer(false_string, LLVMConstString("false", 6, true));
+    LLVMValueRef false_ptr = LLVMConstPointerCast(false_string, str_type);
+
+    LLVMValueRef true_string = LLVMAddGlobal(module,
+            LLVMArrayType(LLVMInt8Type(), 5), ".true");
+    LLVMSetInitializer(true_string, LLVMConstString("true", 5, true));
+    LLVMValueRef true_ptr = LLVMConstPointerCast(true_string, str_type);
+
+    LLVMValueRef strings = LLVMAddGlobal(module,
+            LLVMArrayType(str_type, 2), ".boolean");
+    LLVMValueRef array_values[] = {false_ptr, true_ptr};
+    LLVMValueRef array = LLVMConstArray(str_type, array_values, 2);
+    LLVMSetInitializer(strings, array);
+
+    return strings;
+}
+
 static LLVMValueRef createPrintfFormat(AstExpression* expressions,
         IRState* state)
 {
@@ -288,8 +330,7 @@ static LLVMValueRef createPrintfFormat(AstExpression* expressions,
         } else if (TypeIsArray(type)) {
             strcat(format, "<pointer> (0x %p)");
         } else if (TypeIsBool(type)) {
-            // TODO alterar para bool ? "true" : "false"
-            strcat(format, "%d");
+            strcat(format, "%s");
         } else if (TypeIsInt(type)) {
             strcat(format, "%d");
         } else if (TypeIsFloat(type)) {
@@ -457,20 +498,14 @@ static LLVMBasicBlockRef compileStatementBlock(AstStatement* statement,
 static LLVMBasicBlockRef compileStatementIf(AstStatement* statement, 
         LLVMBasicBlockRef in_block, TableRef declarations, IRState* state)
 {
-    // Computes the expressions' value
-    AstExpression* expression = statement->u.if_.expression;
-    IRBlockValue expression_return = 
-            compileExpression(expression, in_block, declarations, state);
-    LLVMBasicBlockRef expression_out_block = expression_return.block;
-    LLVMValueRef value = expression_return.value;
-
     // Creates the then and else blocks and build the jump
     LLVMBasicBlockRef then_in_block =
             LLVMAppendBasicBlock(state->function, "then");
     LLVMBasicBlockRef else_in_block =
             LLVMAppendBasicBlock(state->function, "else");
-    LLVMPositionBuilderAtEnd(state->builder, expression_out_block);
-    LLVMBuildCondBr(state->builder, value, then_in_block, else_in_block);
+    AstExpression* expression = statement->u.if_.expression;
+    compileJump(expression, in_block, then_in_block, else_in_block,
+            declarations, state);
 
     // Compiles the then statement
     AstStatement* then_statement = statement->u.if_.then_statement;
@@ -541,11 +576,8 @@ static LLVMBasicBlockRef compileStatementWhile(AstStatement* statement,
 
     // Compile expression and add the jump to statement block or out block
     AstExpression* expression = statement->u.while_.expression;
-    IRBlockValue expression_return = compileExpression(expression,
-            expression_in_block, declarations, state);
-    LLVMPositionBuilderAtEnd(state->builder, expression_return.block);
-    LLVMBuildCondBr(state->builder, expression_return.value,
-            statement_in_block, out_block);
+    compileJump(expression, expression_in_block, statement_in_block, out_block,
+            declarations, state);
 
     // Compile statement
     TableRef while_declarations = TableClone(declarations);
@@ -582,6 +614,10 @@ static LLVMBasicBlockRef compileStatementAssign(AstStatement* statement,
     LLVMValueRef value = expression_return.value;
 
     AstVariable* variable = statement->u.assign_.variable;
+    if (TypeIsChar(variable->type)) {
+        LLVMPositionBuilderAtEnd(state->builder, in_block);
+        value = LLVMBuildTrunc(state->builder, value, LLVMInt8Type(), "");
+    }
     LLVMBasicBlockRef out_block;
 
     switch (variable->tag) {
@@ -646,10 +682,18 @@ static LLVMBasicBlockRef compileStatementPrint(AstStatement* statement,
             curr_in_block = expression_return.block;
             LLVMValueRef value = expression_return.value;
 
+            LLVMPositionBuilderAtEnd(state->builder, curr_in_block);
             if (TypeIsFloat(type)) {
-                LLVMPositionBuilderAtEnd(state->builder, curr_in_block);
                 value = LLVMBuildFPCast(state->builder, value,
                         LLVMDoubleType(), "");
+            } else if (TypeIsBool(type)) {
+                LLVMValueRef zero = LLVMConstInt(LLVMInt32Type(), 0, false);
+                LLVMValueRef index = LLVMBuildZExt(state->builder,
+                        value, LLVMInt32Type(), "");
+                LLVMValueRef indices[] = {zero, index};
+                LLVMValueRef location = LLVMBuildGEP(state->builder,
+                        state->bool_strings, indices, 2, "");
+                value = LLVMBuildLoad(state->builder, location, "");
             }
 
             parameters[n++] = value;
@@ -886,6 +930,11 @@ static IRBlockValue compileExpressionVariable(AstExpression* expression,
     }
     }
 
+    if (TypeIsChar(variable->type)) {
+        LLVMPositionBuilderAtEnd(state->builder, out_block);
+        value = LLVMBuildZExt(state->builder, value, LLVMInt32Type(), "");
+    }
+
     return (IRBlockValue) {.block = out_block, .value = value};
 }
 
@@ -981,7 +1030,7 @@ static IRBlockValue compileLogicalBinaryExpression(AstBinaryOperator operator,
     in_block = left_expression_return.block;
     LLVMValueRef lhs = left_expression_return.value;
 
-    // Create short circuit blocks
+    // Create blocks necessary for short circuit
     LLVMBasicBlockRef rhs_in_block =
             LLVMAppendBasicBlock(state->function, "logical_compute_rhs");
     LLVMBasicBlockRef final_block =
@@ -1113,6 +1162,77 @@ static IRBlockValue compileExpressionCast(AstExpression* expression,
     }
 
     return (IRBlockValue) {.block = out_block, .value = value};
+}
+
+static void compileJump(AstExpression* expression,
+        LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state)
+{
+    switch (expression->tag) {
+    case AST_EXPRESSION_KBOOL:
+    case AST_EXPRESSION_CALL:
+    case AST_EXPRESSION_VARIABLE:
+        compileJumpExpression(expression, in_block, true_block, false_block,
+                declarations, state);
+        break;
+    case AST_EXPRESSION_UNARY:
+        assert(expression->u.unary_.operator == AST_OPERATOR_NOT);
+        compileJump(expression, in_block, false_block, true_block, declarations,
+                state);
+        break;
+    case AST_EXPRESSION_BINARY:
+        compileJumpBinary(expression, in_block, true_block, false_block,
+                declarations, state);
+        break;
+    case AST_EXPRESSION_NEW:
+    case AST_EXPRESSION_CAST:
+    case AST_EXPRESSION_KINT:
+    case AST_EXPRESSION_KFLOAT:
+    case AST_EXPRESSION_STRING:
+    case AST_EXPRESSION_NULL:
+        assert(false);
+        break;
+    }
+}
+
+static void compileJumpExpression(AstExpression* expression,
+        LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state)
+{
+    IRBlockValue expression_return = compileExpression(expression, in_block,
+            declarations, state);
+    LLVMPositionBuilderAtEnd(state->builder, expression_return.block);
+    LLVMBuildCondBr(state->builder, expression_return.value, true_block,
+            false_block);
+}
+
+static void compileJumpBinary(AstExpression* expression,
+        LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state)
+{
+    AstBinaryOperator operator = expression->u.binary_.operator;
+    if (operator != AST_OPERATOR_OR && operator != AST_OPERATOR_AND) {
+        compileJumpExpression(expression, in_block, true_block, false_block,
+                declarations, state);
+        return;
+    }
+
+    // Computes left hand side operand
+    LLVMBasicBlockRef rhs_in_block =
+            LLVMAppendBasicBlock(state->function, "compute_rhs");
+    AstExpression* left_expression = expression->u.binary_.expression_left;
+    if (operator == AST_OPERATOR_OR) {
+        compileJump(left_expression, in_block, true_block, rhs_in_block,
+                declarations, state);
+    } else {
+        compileJump(left_expression, in_block, rhs_in_block, false_block,
+                declarations, state);
+    }
+
+    // Computes right hand side operand
+    AstExpression* right_expression = expression->u.binary_.expression_right;
+    compileJump(right_expression, rhs_in_block, true_block, false_block,
+            declarations, state);
 }
 
 static IRBlockValue compileVariableArray(AstVariable* variable,

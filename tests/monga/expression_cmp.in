@@ -1,0 +1,44 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int zero;
+float zerof;
+
+int main() {
+    print "TRUE INT:\n";
+    print zero < 1;
+    print zero > -10;
+    print zero == 0;
+    print zero != 2;
+    print zero <= 0;
+    print zero >= 0;
+
+    print "FALSE INT:\n";
+    print zero < -1231;
+    print zero > 12;
+    print zero != 0;
+    print zero == 1;
+    print zero <= -1;
+    print zero >= 1;
+
+    print "TRUE FLOAT:\n";
+    print zerof < 2;
+    print zerof > -.02;
+    print zerof == 0.0;
+    print zerof != 1.0;
+    print zerof <= 0.03;
+    print zerof >= -12309;
+
+    print "FALSE FLOAT:\n";
+    print zerof < -2;
+    print zerof > 301;
+    print zerof == 0.01;
+    print zerof != 0.0;
+    print zerof <= -0.03;
+    print zerof >= 0.01;
+
+    return 0;
+}
+

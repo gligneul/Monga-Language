@@ -1,13 +1,12 @@
 /*
- * Monga
- *
+ * Monga Language
  * Author: Gabriel de Quadros Ligneul
  */
 
 int global;
 
 void printGlobal() {
-    print global, "\n";
+    print global;
 }
 
 int main() {
@@ -15,15 +14,19 @@ int main() {
     char c;
     float f;
     int i;
+
     global = 25;
     b = false;
     c = 'a';
     f = 3.3;
     i = 357;
+
     printGlobal();
-    print b, "\n";
-    print c, "\n";
-    print f, "\n";
-    print i, "\n";
+    print b;
+    print c;
+    print f;
+    print i;
+
     return 0;
 }
+
