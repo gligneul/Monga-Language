@@ -8,12 +8,10 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MATRIX_SIZE 1000
+size_t MATRIX_SIZE = 0;
 
-/* External monga function */
+/* External functions */
 float** multiplyMatricesMonga(float** a, float** b, int n);
-
-/* External C function */
 float** multiplyMatricesC(float** a, float** b, int n);
 
 /* Auxiliary functions */
@@ -21,8 +19,11 @@ static float** createRandomMatrix();
 static bool compareMatrices(float** a, float** b, size_t n);
 static void destroyMatrix(float** m, size_t n);
 
-int main()
+int main(int argc, char* argv[])
 {
+    (void) argc;
+    MATRIX_SIZE = (size_t)strtol(argv[1], NULL, 10);
+
     float** a = createRandomMatrix();
     float** b = createRandomMatrix();
     float** mongaOut = NULL;
@@ -45,7 +46,8 @@ int main()
         exit(1);
     }
 
-    printf("Matrix multriplication float[%d][%d]\n", MATRIX_SIZE, MATRIX_SIZE);
+    printf("Matrix multriplication float[%lu][%lu]\n", MATRIX_SIZE,
+            MATRIX_SIZE);
     printf("monga: %f s\n", monga_time);
     printf("gcc:   %f s\n\n", gcc_time);
 

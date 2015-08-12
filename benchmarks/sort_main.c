@@ -8,12 +8,10 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define ARRAY_SIZE 50000
+size_t ARRAY_SIZE = 0;
 
-/* External Monga sort function */
+/* External functions */
 void bubbleSortMonga(int* array, int n);
-
-/* External C sort function */
 void bubbleSortC(int* array, int n);
 
 /* Auxiliary functions */
@@ -21,8 +19,11 @@ static int* createArray();
 static int* duplicateArray(int* array, size_t n);
 static bool compareArray(int* a, int* b, size_t n);
 
-int main()
+int main(int argc, char* argv[])
 {
+    (void) argc;
+    ARRAY_SIZE = (size_t)strtol(argv[1], NULL, 10);
+
     int* mongaArray = createArray();
     int* cArray = duplicateArray(mongaArray, ARRAY_SIZE);
     clock_t start, end;
@@ -48,7 +49,7 @@ int main()
         exit(1);
     }
 
-    printf("BubbleSort int[%d]\n", ARRAY_SIZE);
+    printf("BubbleSort int[%lu]\n", ARRAY_SIZE);
     printf("monga: %f s\n", monga_time);
     printf("gcc:   %f s\n\n", gcc_time);
 

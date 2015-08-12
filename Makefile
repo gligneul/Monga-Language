@@ -1,5 +1,4 @@
-# Monga
-#
+# Monga Language
 # Author: Gabriel de Quadros Ligneul
 
 all:
@@ -15,9 +14,6 @@ tests: all
 
 benchmarks: all
 	@make -f build/benchmarks.mak
-
-clean_benchmarks:
-	@make -f build/clean_benchmarks.mak
 
 clean:
 	rm -rf src/scanner/scanner.c src/parser/parser.tab.* obj/* bin/*

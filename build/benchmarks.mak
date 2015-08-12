@@ -3,20 +3,21 @@
 
 # This makefile runs the benchmarks
 
-mains=$(wildcard benchmarks/*_main.c)
-binaries=$(patsubst %_main.c,%.b,$(mains))
-benchmarks=$(patsubst %.b,%.benchmarks,$(binaries))
+runs=$(wildcard benchmarks/*.sh)
+binaries=$(patsubst %.sh,%.bin,$(runs))
+benchmarks=$(patsubst %.sh,%.benchmark,$(runs))
 
 all: $(benchmarks)
 
 %_c.o: %.c
-	@gcc -Wall -Wextra -Werror -O2 -c -o $@ $<
+	gcc -Wall -Wextra -Werror -O2 -c -o $@ $<
 
 %_mng.o: %.mng
-	@./bin/monga -dump -no-execution < $< |& llc -O2 | gcc -O2 -x assembler -c -o $@ -
+	./bin/monga -dump -no-execution < $< |& llc -O2 | gcc -O2 -x assembler -c -o $@ -
 
-%.b: %_main_c.o %_c.o %_mng.o
-	@gcc -O2 -o $@ $^
+%.bin: %_main_c.o %_c.o %_mng.o
+	gcc -O2 -o $@ $^
 
-%.benchmarks: %.b
-	@./$<
+%.benchmark: %.sh %.bin
+	./$^
+

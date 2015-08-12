@@ -1,17 +1,25 @@
 # Monga Language
 
-To compile and run tests:
+Compiling and running tests:
 ```
 make tests
 ```
+Running benchmarks:
+```
+make benchmarks
+```
 
-To run examples:
+Running examples:
 ```
-./bin/monga < examples/sort.mng
-```
+Example:
+    ./bin/monga < examples/sort.mng
 
-Argument options:
-```
--d    Dumps the llvm module
--b    Creates the llvm bytecode file
+Usage:
+    monga [options] < [input]
+
+Options:
+    -h             Shows this message
+    -bc            Exports the llvm bytecode file
+    -dump          Dumps the llvm module
+    -no-execution  Doesn't execute the monga program
 ```
