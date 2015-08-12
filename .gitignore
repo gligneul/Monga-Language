@@ -3,9 +3,12 @@ src/scanner/scanner.c
 src/parser/parser.tab.*
 
 # objects and binaries
-bin/*
 obj/*
+bin/*
+benchmarks/*.d
+benchmarks/*.o
 
 # auxiliar test files
 tests/**/done
+tests/*/*/done
 

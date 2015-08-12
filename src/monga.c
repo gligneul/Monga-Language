@@ -5,6 +5,7 @@
  * monga.c
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,17 @@
 #include "semantic/semantic.h"
 #include "util/error.h"
 
+/* Argument options */
+bool generate_bytecode = false;
+bool dump_module = false;
+bool execute_module = true;
+
+/* Parses then main arguments */
+static void parseArguments(int argc, char* argv[]);
+
+/* Prints the help message */
+static void printHelpMessage();
+
 /* Generates the LLVM bitcode */
 static void exportModule(LLVMModuleRef module);
 
@@ -27,20 +39,52 @@ static int executeModule(LLVMModuleRef module);
 
 int main(int argc, char* argv[])
 {
+    parseArguments(argc, argv);
+
     yyparse();
     SemanticAnalyseTree(parser_ast);
     LLVMModuleRef module = IRCompileModule(parser_ast);
 
-    if (argc > 1) {
-        if (strcmp(argv[1], "-bc") == 0)
-            exportModule(module);
-        else if (strcmp(argv[1], "-d") == 0)
-            LLVMDumpModule(module);
-        else
-            Error("Unknown option: %s", argv[1]);
-    }
+    if (generate_bytecode)
+        exportModule(module);
 
-    return executeModule(module);
+    if (dump_module)
+       LLVMDumpModule(module);
+
+    int return_value = 0;
+    if (execute_module)
+        return_value = executeModule(module);
+
+    return return_value;
+}
+
+static void parseArguments(int argc, char* argv[])
+{
+	for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "-h") == 0)
+            printHelpMessage();
+        else if (strcmp(argv[i], "-bc") == 0)
+            generate_bytecode = true;
+        else if (strcmp(argv[i], "-dump") == 0)
+            dump_module = true;
+        else if (strcmp(argv[i], "-no-execution") == 0)
+            execute_module = false;
+        else
+            Error("Unknown option: %s", argv[i]);
+	}
+}
+
+static void printHelpMessage()
+{
+    printf(
+    "Usage:\n"
+    "    monga [options] < [input]\n"
+    "\n"
+    "Options:\n"
+    "    -h             Shows this message\n"
+    "    -bc            Exports the llvm bytecode file\n"
+    "    -dump          Dumps the llvm module\n"
+    "    -no-execution  Doesn't execute the monga program\n");
 }
 
 static void exportModule(LLVMModuleRef module)
@@ -71,3 +115,4 @@ static int executeModule(LLVMModuleRef module)
     LLVMDisposeExecutionEngine(engine);
     return (int)LLVMGenericValueToInt(result, 0);
 }
+

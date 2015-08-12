@@ -13,5 +13,11 @@ all:
 tests: all
 	@make -f build/tests.mak
 
+benchmarks: all
+	@make -f build/benchmarks.mak
+
+clean_benchmarks:
+	@make -f build/clean_benchmarks.mak
+
 clean:
 	rm -rf src/scanner/scanner.c src/parser/parser.tab.* obj/* bin/*
