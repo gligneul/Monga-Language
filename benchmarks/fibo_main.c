@@ -3,10 +3,9 @@
  * Author: Gabriel de Quadros Ligneul
  */
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <sys/time.h>
 
 /* External functions */
 int fiboMonga(int value);
@@ -32,9 +31,11 @@ int main(int argc, char* argv[])
 
 static void benchmark(int(*function)(int), int value, const char* cc)
 {
-    clock_t start = clock();
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
     function(value);
-    clock_t end = clock();
-    printf("%s:\t%f s\n", cc, (end - start)/(double)CLOCKS_PER_SEC);
+    gettimeofday(&end, NULL);
+    printf("%s:\t%f s\n", cc, (end.tv_sec - start.tv_sec) +
+            (end.tv_usec - start.tv_usec) * (double)1.0e-6);
 }
 

@@ -3,10 +3,10 @@
  * Author: Gabriel de Quadros Ligneul
  */
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/time.h>
 
 /* External functions */
 float** multiplyMatricesMonga(float** a, float** b, int n);
@@ -51,9 +51,11 @@ static float** createRandomMatrix(size_t n)
 static void benchmark(float**(*function)(float**, float**, int), 
         float** a, float** b, int n, const char* cc)
 {
-    clock_t start = clock();
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
     function(a, b, n);
-    clock_t end = clock();
-    printf("%s:\t%f s\n", cc, (end - start) / (double)CLOCKS_PER_SEC);
+    gettimeofday(&end, NULL);
+    printf("%s:\t%f s\n", cc, (end.tv_sec - start.tv_sec) +
+            (end.tv_usec - start.tv_usec) * (double)1.0e-6);
 }
 
