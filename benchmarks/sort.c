@@ -3,7 +3,10 @@
  * Author: Gabriel de Quadros Ligneul
  */
 
-void bubbleSortC(int* array, int size) {
+#define CONCAT(x, y) x ## y
+#define CONCAT2(x, y) CONCAT(x, y)
+
+void CONCAT2(bubbleSort, CC)(int* array, int size) {
     while (size > 1) {
         int i;
         i = 0;

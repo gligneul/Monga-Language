@@ -5,7 +5,10 @@
 
 #include <stdlib.h>
 
-float** multiplyMatricesC(float** a, float** b, int n) {
+#define CONCAT(x, y) x ## y
+#define CONCAT2(x, y) CONCAT(x, y)
+
+float** CONCAT2(multiplyMatrices, CC)(float** a, float** b, int n) {
     int i, j, k;
     float value;
     float** out;

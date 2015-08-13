@@ -10,30 +10,31 @@
 
 /* External functions */
 int fiboMonga(int value);
-int fiboC(int value);
+int fiboGcc(int value);
+int fiboClang(int value);
+
+/* Auxiliar benchmark function */
+static void benchmark(int(*function)(int), int value, const char* cc);
 
 int main(int argc, char* argv[])
 {
-    (void) argc;
+    if (argc < 2) exit(1);
+
     int n = strtol(argv[1], NULL, 10);
 
-    clock_t start, end;
-    double monga_time, gcc_time;
-
-    start = clock();
-    fiboMonga(n);
-    end = clock();
-    monga_time = (end - start)/(double)CLOCKS_PER_SEC;
-
-    start = clock();
-    fiboC(n);
-    end = clock();
-    gcc_time = (end - start)/(double)CLOCKS_PER_SEC;
-
     printf("Recursive Fibonacci(%d)\n", n);
-    printf("monga: %f s\n", monga_time);
-    printf("gcc:   %f s\n\n", gcc_time);
+    benchmark(fiboMonga, n, "monga");
+    benchmark(fiboGcc, n, "gcc");
+    benchmark(fiboClang, n, "clang");
 
     return 0;
+}
+
+static void benchmark(int(*function)(int), int value, const char* cc)
+{
+    clock_t start = clock();
+    function(value);
+    clock_t end = clock();
+    printf("%s:\t%f s\n", cc, (end - start)/(double)CLOCKS_PER_SEC);
 }
 
