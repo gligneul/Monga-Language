@@ -34,6 +34,9 @@ static void printHelpMessage();
 /* Generates the LLVM bitcode */
 static void exportModule(LLVMModuleRef module);
 
+/* Prints in stdio the LLVM Module */
+static void dumpModule(LLVMModuleRef module);
+
 /* Executes a LLVM module */
 static int executeModule(LLVMModuleRef module);
 
@@ -49,7 +52,7 @@ int main(int argc, char* argv[])
         exportModule(module);
 
     if (dump_module)
-       LLVMDumpModule(module);
+        dumpModule(module);
 
     int return_value = 0;
     if (execute_module)
@@ -92,6 +95,13 @@ static void exportModule(LLVMModuleRef module)
     if (LLVMWriteBitcodeToFile(module, "monga.bc") != 0) {
         Error("Error writing bitcode to file, skipping");
     }
+}
+
+static void dumpModule(LLVMModuleRef module)
+{
+    char* str = LLVMPrintModuleToString(module);
+    puts(str);
+    LLVMDisposeMessage(str);
 }
 
 static int executeModule(LLVMModuleRef module)

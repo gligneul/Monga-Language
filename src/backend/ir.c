@@ -47,7 +47,10 @@ typedef struct IRBlockValue {
     LLVMValueRef value;
 } IRBlockValue;
  
+/* Max number of parameters for in a function call */
 const int MAX_N_PARAMETERS = 64;
+
+/* Max number of elements printed with print statement */
 const int MAX_FORMAT = 1024;
 
 /* Verifies if the LLVM module is correct */
@@ -421,6 +424,7 @@ static void compileParameters(AstDeclaration* parameters, TableRef declarations,
     int i = 0;
     AST_FOREACH(AstDeclaration, parameter, parameters) {
         LLVMValueRef llvm_parameter = LLVMGetParam(state->function, i++);
+        LLVMSetValueName(llvm_parameter, parameter->identifier);
         TableInsert(declarations, parameter, llvm_parameter);
     }
 }
@@ -593,9 +597,17 @@ static LLVMBasicBlockRef compileStatementWhile(AstStatement* statement,
         LLVMValueRef in_value = locals[i].data;
         LLVMValueRef statement_value =
                 TableFind(while_declarations, declaration).data;
-        LLVMValueRef incomming_values[] = {in_value, statement_value};
-        LLVMBasicBlockRef incomming_blocks[] = {in_block, statement_out_block};
-        LLVMAddIncoming(phis[i], incomming_values, incomming_blocks, 2);
+        if (statement_value == phis[i]) {
+            LLVMReplaceAllUsesWith(phis[i], in_value);
+            LLVMInstructionEraseFromParent(phis[i]);
+            TableErase(declarations, declaration);
+            TableInsert(declarations, declaration, in_value);
+        } else {
+            LLVMValueRef incomming_values[] = {in_value, statement_value};
+            LLVMBasicBlockRef incomming_blocks[] = {in_block,
+                    statement_out_block};
+            LLVMAddIncoming(phis[i], incomming_values, incomming_blocks, 2);
+        }
     }
 
     TableDestroy(while_declarations);
