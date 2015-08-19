@@ -1,0 +1,29 @@
+/*
+ * Monga Language
+ * Author: Gabriel de Quadros Ligneul
+ */
+
+int bar(int a, int b) {
+    return a + b;
+}
+
+void foo(bool c1, bool c2) {
+    int i;
+
+    print "foo()\n";
+    print "i: ", i;
+    if (c1 || c2) {
+        i = bar(i, 99);
+    } else {
+        i = bar(i, 1);
+    }
+    print "i: ", i;
+}
+
+int main() {
+    foo(true, true);
+    foo(false, true);
+    foo(false, false);
+    return 0;
+}
+
