@@ -139,6 +139,11 @@ static TablePair* getLocalDeclarations(TableRef declarations, int* n);
 /* Assign all other declarations to declarations */
 static void updateDeclarations(TableRef declarations, TableRef other);
 
+/* Links the phis variables */
+static void linkPhis(TablePair* locals, int n_locals, LLVMValueRef* phis,
+        TableRef left_declarations, Vector* left_arrives,
+        TableRef right_declarations, Vector* right_arrives);
+
 /* Compiles expressions */
 static IRBlockValue compileExpression(AstExpression* expression,
         LLVMBasicBlockRef in_block, TableRef declarations, IRState* state);
@@ -180,18 +185,25 @@ static LLVMValueRef compileExpressionBinaryFloatCmp(AstBinaryOperator operator,
 static IRBlockValue compileExpressionCast(AstExpression* expression,
         LLVMBasicBlockRef in_block, TableRef declarations, IRState* state);
 
-/* Compiles the expression and jumps to the corresponding block */
+/* Compiles the expression and jumps to the corresponding block.
+ * Arrive_at_* vectors are filled with the blocks that arrive at 
+ * the corresponding block. Those vectors can be NULL */
 static void compileJump(AstExpression* expression,
         LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
-        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state);
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state,
+        Vector* arrive_at_true, Vector* arrive_at_false);
 
 static void compileJumpExpression(AstExpression* expression,
         LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
-        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state);
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state,
+        Vector* arrive_at_true, Vector* arrive_at_false);
+
 
 static void compileJumpBinary(AstExpression* expression,
         LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
-        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state);
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state,
+        Vector* arrive_at_true, Vector* arrive_at_false);
+
 
 /* Returns the pointer to the array's element */
 static IRBlockValue compileVariableArray(AstVariable* variable,
@@ -509,7 +521,7 @@ static LLVMBasicBlockRef compileStatementIf(AstStatement* statement,
             LLVMAppendBasicBlock(state->function, "else");
     AstExpression* expression = statement->u.if_.expression;
     compileJump(expression, in_block, then_in_block, else_in_block,
-            declarations, state);
+            declarations, state, NULL, NULL);
 
     // Compiles the then statement
     AstStatement* then_statement = statement->u.if_.then_statement;
@@ -550,6 +562,88 @@ static LLVMBasicBlockRef compileStatementIf(AstStatement* statement,
 
 static LLVMBasicBlockRef compileStatementWhile(AstStatement* statement, 
         LLVMBasicBlockRef in_block, TableRef declarations, IRState* state)
+{
+    // TODO: Refactoring to remove duplicate code
+
+    // Compiles a while statement with:
+    // if (condition) {
+    //   do {
+    //     statement;
+    //   while (condition);
+    // }
+
+    // Creates the while's blocks
+    LLVMBasicBlockRef loop_in_block =
+            LLVMAppendBasicBlock(state->function, "loop_in");
+    LLVMBasicBlockRef end_block =
+            LLVMAppendBasicBlock(state->function, "loop_end");
+
+    // Evaluates the expression before the loop
+    AstExpression* expression = statement->u.while_.expression;
+    Vector* arrive_at_loop_from_in = VectorCreate();
+    Vector* arrive_at_end_from_in = VectorCreate();
+    compileJump(expression, in_block, loop_in_block, end_block,
+            declarations, state, arrive_at_loop_from_in,
+            arrive_at_end_from_in);
+
+    // Create the loop's phis variables
+    int n_locals;
+    TablePair* locals = getLocalDeclarations(declarations, &n_locals);
+    LLVMValueRef loop_phis[n_locals];
+    TableRef loop_declarations = TableClone(declarations);
+    LLVMPositionBuilderAtEnd(state->builder, loop_in_block);
+    for (int i = 0; i < n_locals; ++i) {
+        AstDeclaration* declaration = locals[i].key;
+        LLVMTypeRef phi_type = createType(declaration->type);
+        loop_phis[i] = LLVMBuildPhi(state->builder, phi_type, "");
+        TableErase(loop_declarations, declaration);
+        TableInsert(loop_declarations, declaration, loop_phis[i]);
+    }
+
+    // Compiles the loop statement
+    AstStatement* loop_statement = statement->u.while_.statement;
+    LLVMBasicBlockRef loop_out_block = compileStatements(loop_statement,
+            loop_in_block, loop_declarations, state);
+
+    // Evaluetes the expression inside the loop
+    Vector* arrive_at_loop_from_loop = VectorCreate();
+    Vector* arrive_at_end_from_loop = VectorCreate();
+    compileJump(expression, loop_out_block, loop_in_block, end_block,
+            loop_declarations, state, arrive_at_loop_from_loop,
+            arrive_at_end_from_loop);
+
+    // Creates the end block phis
+    LLVMValueRef end_phis[n_locals];
+    LLVMPositionBuilderAtEnd(state->builder, end_block);
+    for (int i = 0; i < n_locals; ++i) {
+        AstDeclaration* declaration = locals[i].key;
+        LLVMTypeRef phi_type = createType(declaration->type);
+        end_phis[i] = LLVMBuildPhi(state->builder, phi_type, "");
+    }
+
+    // Link phis
+    linkPhis(locals, n_locals, loop_phis, declarations, arrive_at_loop_from_in,
+            loop_declarations, arrive_at_loop_from_loop);
+    linkPhis(locals, n_locals, end_phis, declarations, arrive_at_end_from_in,
+            loop_declarations, arrive_at_end_from_loop);
+
+    // Replace phis in out declarations
+    for (int i = 0; i < n_locals; ++i) {
+        AstDeclaration* declaration = locals[i].key;
+        TableErase(declarations, declaration);
+        TableInsert(declarations, declaration, end_phis[i]);
+    }
+
+    // Deallocation
+    VectorDestroy(arrive_at_loop_from_in);
+    VectorDestroy(arrive_at_end_from_in);
+    VectorDestroy(arrive_at_loop_from_loop);
+    VectorDestroy(arrive_at_end_from_loop);
+    TableDestroy(loop_declarations);
+    free(locals);
+    return end_block;
+}
+#if 0
 {
     // Creates the while's blocks
     LLVMBasicBlockRef expression_in_block =
@@ -615,6 +709,7 @@ static LLVMBasicBlockRef compileStatementWhile(AstStatement* statement,
 
     return out_block;
 }
+#endif
 
 static LLVMBasicBlockRef compileStatementAssign(AstStatement* statement, 
         LLVMBasicBlockRef in_block, TableRef declarations, IRState* state)
@@ -822,6 +917,39 @@ static void updateDeclarations(TableRef declarations, TableRef other)
         TableInsert(declarations, declaration, value);
     }
     free(other_pairs);
+}
+
+static void linkPhis(TablePair* locals, int n_locals, LLVMValueRef* phis,
+        TableRef left_declarations, Vector* left_arrives,
+        TableRef right_declarations, Vector* right_arrives)
+{
+    for (int i = 0; i < n_locals; ++i) {
+        AstDeclaration* declaration = locals[i].key;
+        LLVMValueRef left_value =
+                TableFind(left_declarations, declaration).data;
+        LLVMValueRef right_value =
+                TableFind(right_declarations, declaration).data;
+        size_t left_n_blocks = VectorSize(left_arrives);
+        size_t right_n_blocks = VectorSize(right_arrives);
+        size_t total_blocks = left_n_blocks + right_n_blocks;
+        LLVMValueRef incomming_values[total_blocks];
+        LLVMBasicBlockRef incomming_blocks[total_blocks];
+        size_t curr_block = 0;
+
+        for (size_t block = 0; block < left_n_blocks; ++block) {
+            incomming_values[curr_block] = left_value;
+            incomming_blocks[curr_block] = VectorGet(left_arrives, block);
+            ++curr_block;
+        }
+        for (size_t block = 0; block < right_n_blocks; ++block) {
+            incomming_values[curr_block] = right_value;
+            incomming_blocks[curr_block] = VectorGet(right_arrives, block);
+            ++curr_block;
+        }
+
+        LLVMAddIncoming(phis[i], incomming_values, incomming_blocks,
+                total_blocks);
+    }
 }
 
 static IRBlockValue compileExpression(AstExpression* expression,
@@ -1178,23 +1306,24 @@ static IRBlockValue compileExpressionCast(AstExpression* expression,
 
 static void compileJump(AstExpression* expression,
         LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
-        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state)
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state,
+        Vector* arrive_at_true, Vector* arrive_at_false)
 {
     switch (expression->tag) {
     case AST_EXPRESSION_KBOOL:
     case AST_EXPRESSION_CALL:
     case AST_EXPRESSION_VARIABLE:
         compileJumpExpression(expression, in_block, true_block, false_block,
-                declarations, state);
+                declarations, state, arrive_at_true, arrive_at_false);
         break;
     case AST_EXPRESSION_UNARY:
         assert(expression->u.unary_.operator == AST_OPERATOR_NOT);
         compileJump(expression, in_block, false_block, true_block, declarations,
-                state);
+                state, arrive_at_false, arrive_at_true);
         break;
     case AST_EXPRESSION_BINARY:
         compileJumpBinary(expression, in_block, true_block, false_block,
-                declarations, state);
+                declarations, state, arrive_at_true, arrive_at_false);
         break;
     case AST_EXPRESSION_NEW:
     case AST_EXPRESSION_CAST:
@@ -1209,23 +1338,30 @@ static void compileJump(AstExpression* expression,
 
 static void compileJumpExpression(AstExpression* expression,
         LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
-        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state)
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state,
+        Vector* arrive_at_true, Vector* arrive_at_false)
 {
     IRBlockValue expression_return = compileExpression(expression, in_block,
             declarations, state);
     LLVMPositionBuilderAtEnd(state->builder, expression_return.block);
     LLVMBuildCondBr(state->builder, expression_return.value, true_block,
             false_block);
+
+    if (arrive_at_true != NULL)
+        VectorPush(arrive_at_true, expression_return.block);
+    if (arrive_at_false != NULL)
+        VectorPush(arrive_at_false, expression_return.block);
 }
 
 static void compileJumpBinary(AstExpression* expression,
         LLVMBasicBlockRef in_block, LLVMBasicBlockRef true_block,
-        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state)
+        LLVMBasicBlockRef false_block, TableRef declarations, IRState* state,
+        Vector* arrive_at_true, Vector* arrive_at_false)
 {
     AstBinaryOperator operator = expression->u.binary_.operator;
     if (operator != AST_OPERATOR_OR && operator != AST_OPERATOR_AND) {
         compileJumpExpression(expression, in_block, true_block, false_block,
-                declarations, state);
+                declarations, state, arrive_at_true, arrive_at_false);
         return;
     }
 
@@ -1235,16 +1371,16 @@ static void compileJumpBinary(AstExpression* expression,
     AstExpression* left_expression = expression->u.binary_.expression_left;
     if (operator == AST_OPERATOR_OR) {
         compileJump(left_expression, in_block, true_block, rhs_in_block,
-                declarations, state);
+                declarations, state, arrive_at_true, NULL);
     } else {
         compileJump(left_expression, in_block, rhs_in_block, false_block,
-                declarations, state);
+                declarations, state, NULL, arrive_at_false);
     }
 
     // Computes right hand side operand
     AstExpression* right_expression = expression->u.binary_.expression_right;
     compileJump(right_expression, rhs_in_block, true_block, false_block,
-            declarations, state);
+            declarations, state, arrive_at_true, arrive_at_false);
 }
 
 static IRBlockValue compileVariableArray(AstVariable* variable,
