@@ -8,12 +8,13 @@
 #include <time.h>
 #include <sys/time.h>
 
-size_t ARRAY_SIZE = 0;
+const int N_TESTS = 10;
 
 /* External functions */
 void bubbleSortMonga(int* array, int n);
 void bubbleSortGcc(int* array, int n);
 void bubbleSortClang(int* array, int n);
+void bubbleSortClangLlc(int* array, int n);
 
 /* Creates an array of random elements with size n */
 static int* createArray(size_t n);
@@ -31,14 +32,13 @@ int main(int argc, char* argv[])
 
     size_t n = (size_t)strtol(argv[1], NULL, 10);
     srand(time(NULL));
-    int* mongaArray = createArray(n);
-    int* gccArray = duplicateArray(mongaArray, n);
-    int* clangArray = duplicateArray(mongaArray, n);
+    int* array = createArray(n);
 
     printf("BubbleSort int[%lu]\n", n);
-    benchmark(bubbleSortMonga, mongaArray, n, "monga");
-    benchmark(bubbleSortGcc, gccArray, n, "gcc");
-    benchmark(bubbleSortClang, clangArray, n, "clang");
+    benchmark(bubbleSortMonga, array, n, "monga");
+    benchmark(bubbleSortGcc, array, n, "gcc");
+    benchmark(bubbleSortClang, array, n, "clang");
+    benchmark(bubbleSortClangLlc, array, n, "clang -O0 + llc");
 
     return 0;
 }
@@ -63,11 +63,19 @@ static int* duplicateArray(int* array, size_t n)
 static void benchmark(void(*function)(int*, int), int* array, size_t n,
         const char* cc)
 {
-    struct timeval start, end;
-    gettimeofday(&start, NULL);
-    function(array, n);
-    gettimeofday(&end, NULL);
-    printf("%s:\t%f s\n", cc, (end.tv_sec - start.tv_sec) +
-            (end.tv_usec - start.tv_usec) * (double)1.0e-6);
+    double total = 0;
+
+    for (int i = 0; i < N_TESTS; ++i) {
+        struct timeval start, end;
+        int* copy = duplicateArray(array, n);
+        gettimeofday(&start, NULL);
+        function(copy, n);
+        gettimeofday(&end, NULL);
+        free(copy);
+        total += (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)
+                * (double)1.0e-6;
+    }
+
+    printf("%-16s%f s\n", cc, total / N_TESTS);
 }
 

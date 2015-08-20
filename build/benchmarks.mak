@@ -21,10 +21,18 @@ all: $(benchmarks)
 %_clang.o: %.c
 	clang -DCC=Clang $(cflags) $(opt) -c -o $@ $<
 
-%_mng.o: %.mng
-	./bin/monga -dump -no-execution < $< |& llc $(opt) | gcc $(opt) -x assembler -c -o $@ -
+%_clang_llc.o: %.c
+	clang -DCC=ClangLlc $(cflags) -O0 -emit-llvm -S -o temp.ll $<
+	llc $(opt) temp.ll -o temp.s
+	gcc temp.s -c -o $@
+	rm temp.ll temp.s
 
-%.bin: %_main.o %_gcc.o %_clang.o %_mng.o
+%_mng.o: %.mng
+	./bin/monga -dump -no-execution < $< |& \
+	llc $(opt) | \
+	gcc $(opt) -x assembler -c -o $@ -
+
+%.bin: %_main.o %_gcc.o %_clang.o %_clang_llc.o %_mng.o
 	gcc $(opt) -o $@ $^
 
 %.benchmark: %.sh %.bin
