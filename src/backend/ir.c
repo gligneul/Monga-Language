@@ -675,7 +675,7 @@ static LLVMBasicBlockRef compileStatementWhile(AstStatement* statement,
     // Compile expression and add the jump to statement block or out block
     AstExpression* expression = statement->u.while_.expression;
     compileJump(expression, expression_in_block, statement_in_block, out_block,
-            declarations, state);
+            declarations, state, NULL, NULL);
 
     // Compile statement
     TableRef while_declarations = TableClone(declarations);
